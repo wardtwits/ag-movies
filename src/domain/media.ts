@@ -24,3 +24,20 @@ export interface MediaWithCast {
   media: MediaTitle
   cast: CastMember[]
 }
+
+export interface PersonSummary {
+  id: number
+  name: string
+  popularity: number
+  profilePath?: string | null
+}
+
+export interface MediaCredit extends MediaTitle {
+  character?: string
+  order: number
+}
+
+export interface PersonWithCredits {
+  person: PersonSummary
+  credits: MediaCredit[]
+}

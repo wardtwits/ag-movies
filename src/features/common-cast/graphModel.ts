@@ -3,7 +3,7 @@ import type { CommonCastResult, SharedActor, SharedActorRoleCategory } from './t
 export interface CommonCastGraphNode {
   id: string
   label: string
-  kind: 'left-title' | 'right-title' | 'actor'
+  kind: 'left-title' | 'right-title' | 'actor' | 'title'
   color: string
   tooltip: string
   value: number

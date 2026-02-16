@@ -2,6 +2,10 @@ export interface TmdbSearchResponse {
   results: TmdbSearchResult[]
 }
 
+export interface TmdbPersonSearchResponse {
+  results: TmdbPersonSearchResult[]
+}
+
 export interface TmdbSearchResult {
   id: number
   media_type: string
@@ -16,8 +20,19 @@ export interface TmdbSearchResult {
   poster_path?: string | null
 }
 
+export interface TmdbPersonSearchResult {
+  id: number
+  name: string
+  popularity?: number
+  profile_path?: string | null
+}
+
 export interface TmdbCreditsResponse {
   cast: TmdbCastMember[]
+}
+
+export interface TmdbPersonCombinedCreditsResponse {
+  cast: TmdbPersonCredit[]
 }
 
 export interface TmdbAggregateCreditsResponse {
@@ -44,4 +59,20 @@ export interface TmdbAggregateCastMember {
     character?: string
     episode_count?: number
   }>
+}
+
+export interface TmdbPersonCredit {
+  id: number
+  media_type: string
+  title?: string
+  name?: string
+  original_title?: string
+  original_name?: string
+  release_date?: string
+  first_air_date?: string
+  popularity?: number
+  vote_count?: number
+  poster_path?: string | null
+  character?: string
+  order?: number
 }

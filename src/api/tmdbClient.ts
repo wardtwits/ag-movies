@@ -1,9 +1,21 @@
-import type { CastMember, MediaTitle, MediaType, MediaWithCast } from '../domain/media'
+import type {
+  CastMember,
+  MediaCredit,
+  MediaTitle,
+  MediaType,
+  MediaWithCast,
+  PersonSummary,
+  PersonWithCredits,
+} from '../domain/media'
 import type {
   TmdbAggregateCastMember,
   TmdbAggregateCreditsResponse,
   TmdbCastMember,
   TmdbCreditsResponse,
+  TmdbPersonCombinedCreditsResponse,
+  TmdbPersonCredit,
+  TmdbPersonSearchResponse,
+  TmdbPersonSearchResult,
   TmdbSearchResponse,
   TmdbSearchResult,
 } from './tmdbTypes'
@@ -56,6 +68,40 @@ const mapCastMember = (member: TmdbCastMember): CastMember => ({
   profilePath: member.profile_path,
 })
 
+const mapPersonSearchResult = (result: TmdbPersonSearchResult): PersonSummary => ({
+  id: result.id,
+  name: result.name,
+  popularity: result.popularity ?? 0,
+  profilePath: result.profile_path,
+})
+
+const mapPersonCreditToMedia = (credit: TmdbPersonCredit): MediaCredit | null => {
+  if (!isMediaType(credit.media_type)) {
+    return null
+  }
+
+  const title = credit.media_type === 'movie' ? credit.title : credit.name
+  if (!title) {
+    return null
+  }
+
+  return {
+    id: credit.id,
+    mediaType: credit.media_type,
+    title,
+    originalTitle:
+      credit.media_type === 'movie'
+        ? (credit.original_title ?? title)
+        : (credit.original_name ?? title),
+    releaseDate: credit.media_type === 'movie' ? credit.release_date : credit.first_air_date,
+    popularity: credit.popularity ?? 0,
+    voteCount: credit.vote_count ?? 0,
+    posterPath: credit.poster_path,
+    character: credit.character?.trim() || undefined,
+    order: credit.order ?? Number.MAX_SAFE_INTEGER,
+  }
+}
+
 const mapAggregateCastMember = (member: TmdbAggregateCastMember): CastMember => {
   const strongestRole = [...(member.roles ?? [])].sort(
     (left, right) => (right.episode_count ?? 0) - (left.episode_count ?? 0),
@@ -79,6 +125,27 @@ const dedupeCastMembers = (members: CastMember[]): CastMember[] => {
     }
   }
   return Array.from(byId.values())
+}
+
+const dedupeMediaCredits = (credits: MediaCredit[]): MediaCredit[] => {
+  const byMediaKey = new Map<string, MediaCredit>()
+  for (const credit of credits) {
+    const key = `${credit.mediaType}-${credit.id}`
+    const existing = byMediaKey.get(key)
+    if (!existing) {
+      byMediaKey.set(key, credit)
+      continue
+    }
+
+    const shouldReplace =
+      credit.order < existing.order ||
+      (credit.order === existing.order && credit.popularity > existing.popularity)
+    if (shouldReplace) {
+      byMediaKey.set(key, credit)
+    }
+  }
+
+  return Array.from(byMediaKey.values())
 }
 
 const requestTmdb = async <T>(
@@ -125,8 +192,28 @@ const scoreMatch = (media: MediaTitle, rawQuery: string): number => {
   return score
 }
 
+const scorePersonMatch = (person: PersonSummary, rawQuery: string): number => {
+  const query = normalizeText(rawQuery)
+  const name = normalizeText(person.name)
+
+  let score = Math.log1p(person.popularity)
+  if (name === query) {
+    score += 100
+  } else if (name.startsWith(query)) {
+    score += 35
+  } else if (name.includes(query)) {
+    score += 18
+  }
+
+  return score
+}
+
 const pickBestMatch = (query: string, results: MediaTitle[]): MediaTitle => {
   return [...results].sort((left, right) => scoreMatch(right, query) - scoreMatch(left, query))[0]
+}
+
+const pickBestPersonMatch = (query: string, results: PersonSummary[]): PersonSummary => {
+  return [...results].sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))[0]
 }
 
 export const searchMediaTitles = async (query: string): Promise<MediaTitle[]> => {
@@ -140,6 +227,17 @@ export const searchMediaTitles = async (query: string): Promise<MediaTitle[]> =>
   return response.results
     .map(mapSearchResultToMediaTitle)
     .filter((candidate): candidate is MediaTitle => candidate !== null)
+}
+
+export const searchPeople = async (query: string): Promise<PersonSummary[]> => {
+  const response = await requestTmdb<TmdbPersonSearchResponse>('/search/person', {
+    query,
+    language: 'en-US',
+    include_adult: false,
+    page: 1,
+  })
+
+  return response.results.map(mapPersonSearchResult)
 }
 
 export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]> => {
@@ -184,6 +282,26 @@ export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]
   })
 }
 
+export const fetchCreditsForPerson = async (personId: number): Promise<MediaCredit[]> => {
+  const response = await requestTmdb<TmdbPersonCombinedCreditsResponse>(`/person/${personId}/combined_credits`, {
+    language: 'en-US',
+  })
+
+  const mappedCredits = response.cast
+    .map(mapPersonCreditToMedia)
+    .filter((candidate): candidate is MediaCredit => candidate !== null)
+
+  return dedupeMediaCredits(mappedCredits).sort((left, right) => {
+    if (right.popularity !== left.popularity) {
+      return right.popularity - left.popularity
+    }
+    if (right.voteCount !== left.voteCount) {
+      return right.voteCount - left.voteCount
+    }
+    return left.title.localeCompare(right.title)
+  })
+}
+
 export const resolveTitleToCast = async (query: string): Promise<MediaWithCast> => {
   const cleanQuery = query.trim()
   if (!cleanQuery) {
@@ -201,5 +319,25 @@ export const resolveTitleToCast = async (query: string): Promise<MediaWithCast> 
   return {
     media: selectedMedia,
     cast,
+  }
+}
+
+export const resolveActorToCredits = async (query: string): Promise<PersonWithCredits> => {
+  const cleanQuery = query.trim()
+  if (!cleanQuery) {
+    throw new Error('Please enter an actor name.')
+  }
+
+  const matches = await searchPeople(cleanQuery)
+  if (!matches.length) {
+    throw new Error(`No actor was found for "${cleanQuery}".`)
+  }
+
+  const selectedActor = pickBestPersonMatch(cleanQuery, matches)
+  const credits = await fetchCreditsForPerson(selectedActor.id)
+
+  return {
+    person: selectedActor,
+    credits,
   }
 }

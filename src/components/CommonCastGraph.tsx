@@ -23,6 +23,9 @@ const truncateLabel = (label: string, maxLength: number): string => {
   return `${label.slice(0, maxLength - 3)}...`
 }
 
+const isAnchorNode = (nodeKind: CommonCastGraphNode['kind']): boolean =>
+  nodeKind === 'left-title' || nodeKind === 'right-title'
+
 export const CommonCastGraph = ({ graphData, nodeSpacing }: CommonCastGraphProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const graphRef = useRef<ForceGraphMethods<PositionedNode, CommonCastGraphLink> | undefined>(undefined)
@@ -126,10 +129,10 @@ export const CommonCastGraph = ({ graphData, nodeSpacing }: CommonCastGraphProps
       const graphNode = node as unknown as PositionedNode
       const x = node.x ?? 0
       const y = node.y ?? 0
-      const baseRadius = graphNode.kind === 'actor' ? 8 : 17
+      const baseRadius = isAnchorNode(graphNode.kind) ? 17 : 8
       const radius = Math.max(5, baseRadius / Math.pow(globalScale, 0.15))
 
-      if (graphNode.kind !== 'actor') {
+      if (isAnchorNode(graphNode.kind)) {
         context.shadowColor = graphNode.color
         context.shadowBlur = 18
       }
@@ -142,12 +145,12 @@ export const CommonCastGraph = ({ graphData, nodeSpacing }: CommonCastGraphProps
       context.strokeStyle = 'rgba(255, 255, 255, 0.7)'
       context.stroke()
 
-      const fontSize = graphNode.kind === 'actor' ? 8 : 11
+      const fontSize = isAnchorNode(graphNode.kind) ? 11 : 8
       context.font = `${fontSize}px "Sora", sans-serif`
       context.fillStyle = '#f4f8ff'
       context.textAlign = 'left'
       context.textBaseline = 'middle'
-      context.fillText(truncateLabel(graphNode.label, graphNode.kind === 'actor' ? 18 : 25), x + radius + 5, y)
+      context.fillText(truncateLabel(graphNode.label, isAnchorNode(graphNode.kind) ? 25 : 18), x + radius + 5, y)
     },
     [],
   )
