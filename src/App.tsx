@@ -135,7 +135,7 @@ function App() {
           rightLabel: 'Movie / TV title 2',
           leftPlaceholder: 'Example: The Matrix',
           rightPlaceholder: 'Example: John Wick',
-          submitLabel: 'Build Common-Cast Graph',
+          submitLabel: 'Build Overlap Layout',
           submitLoadingLabel: 'Matching Cast...',
         }
       : {
@@ -143,7 +143,7 @@ function App() {
           rightLabel: 'Actor 2',
           leftPlaceholder: 'Example: Kelsey Grammer',
           rightPlaceholder: 'Example: Peri Gilpin',
-          submitLabel: 'Build Common-Titles Graph',
+          submitLabel: 'Build Overlap Layout',
           submitLoadingLabel: 'Matching Titles...',
         }
 
@@ -226,7 +226,7 @@ function App() {
               <>
                 <div className="graph-controls">
                   <label className="graph-control-label" htmlFor="node-spacing">
-                    Node spacing
+                    Magnetic spread
                   </label>
                   <input
                     id="node-spacing"

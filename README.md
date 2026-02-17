@@ -1,25 +1,27 @@
 # WWIT: Common Cast Graph
 
-A React + TypeScript (Vite) site that compares any two movie/TV titles using TMDB and renders a colorful, interactive node-link diagram of actors shared between both.
+A React + TypeScript (Vite) site that compares two inputs using TMDB and renders a colorful, interactive Magnetic Overlap Layout.
 
 This app is frontend-only and deployable to GitHub Pages (no server backend).
 
 ## Current feature
 
-- Input title A and title B
-- Resolve best TMDB match for each title
-- Fetch each title's cast
-- Compute actor intersection
-- Visualize the relationship in a force-directed graph
+- Search mode: TV/Film vs TV/Film
+- Search mode: Actor vs Actor
+- Resolve best TMDB matches
+- Compute intersection (shared actors or shared titles)
+- Visualize overlap in a draggable Magnetic Overlap Layout
 
 ## Reusable architecture
 
 - `src/domain/media.ts`: shared core media/cast types
 - `src/api/tmdbClient.ts`: typed TMDB client + title resolution
 - `src/features/common-cast/commonCastService.ts`: intersection logic
+- `src/features/common-titles/commonTitlesService.ts`: actor-to-actor overlap logic
 - `src/features/common-cast/graphModel.ts`: graph data transformation
+- `src/features/common-titles/graphModel.ts`: graph data transformation for shared titles
 - `src/components/CommonCastForm.tsx`: reusable compare form
-- `src/components/CommonCastGraph.tsx`: reusable node-link graph renderer
+- `src/components/CommonCastGraph.tsx`: reusable Magnetic Overlap renderer
 
 This split is designed so future compare modes (for example actor-to-actor, title-to-actor) can reuse API/domain layers and only add new feature modules.
 

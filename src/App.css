@@ -333,6 +333,107 @@
   overflow: hidden;
 }
 
+.magnetic-layout {
+  position: relative;
+  isolation: isolate;
+}
+
+.magnetic-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.magnetic-overlap-zone {
+  position: absolute;
+  width: min(48vw, 440px);
+  height: min(34vw, 300px);
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1px dashed rgba(163, 196, 255, 0.34);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(119, 185, 255, 0.11), transparent 74%),
+    radial-gradient(circle at 48% 58%, rgba(255, 188, 120, 0.08), transparent 82%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.magnetic-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  min-width: 160px;
+  max-width: 220px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 0.44rem 0.72rem;
+  background: rgba(8, 20, 43, 0.76);
+  color: #e8f3ff;
+  font-size: 0.72rem;
+  text-align: center;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 28px rgba(2, 8, 22, 0.42);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.magnetic-anchor-left {
+  box-shadow:
+    0 0 0 1px rgba(255, 133, 91, 0.28),
+    0 10px 28px rgba(2, 8, 22, 0.42);
+}
+
+.magnetic-anchor-right {
+  box-shadow:
+    0 0 0 1px rgba(96, 179, 255, 0.28),
+    0 10px 28px rgba(2, 8, 22, 0.42);
+}
+
+.magnetic-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  border: 1px solid;
+  border-radius: 999px;
+  background: rgba(9, 23, 48, 0.84);
+  color: #def0ff;
+  font-size: 0.66rem;
+  line-height: 1.1;
+  padding: 0.3rem 0.56rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  cursor: grab;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  touch-action: none;
+}
+
+.magnetic-node:focus-visible {
+  outline: 2px solid rgba(107, 190, 255, 0.72);
+  outline-offset: 2px;
+}
+
+.magnetic-node-dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 0 1px rgba(166, 207, 255, 0.4);
+}
+
+.magnetic-node-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
 .actor-list {
   margin-top: 0.7rem;
   display: flex;

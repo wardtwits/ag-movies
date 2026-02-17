@@ -1,20 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import ForceGraph2D, { type ForceGraphMethods, type NodeObject } from 'react-force-graph-2d'
-import type { CommonCastGraphData, CommonCastGraphLink, CommonCastGraphNode } from '../features/common-cast/graphModel'
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import type { CommonCastGraphData, CommonCastGraphLink } from '../features/common-cast/graphModel'
 
 interface CommonCastGraphProps {
   graphData: CommonCastGraphData
   nodeSpacing: number
 }
 
-type PositionedNode = CommonCastGraphNode & {
-  x?: number
-  y?: number
-  fx?: number
-  fy?: number
-  vx?: number
-  vy?: number
+interface Point {
+  x: number
+  y: number
 }
+
+interface DragState {
+  nodeId: string
+  pointerOffsetX: number
+  pointerOffsetY: number
+}
+
+const GOLDEN_ANGLE_RADIANS = 2.399963229728653
 
 const truncateLabel = (label: string, maxLength: number): string => {
   if (label.length <= maxLength) {
@@ -23,24 +26,24 @@ const truncateLabel = (label: string, maxLength: number): string => {
   return `${label.slice(0, maxLength - 3)}...`
 }
 
-const isAnchorNode = (nodeKind: CommonCastGraphNode['kind']): boolean =>
-  nodeKind === 'left-title' || nodeKind === 'right-title'
+const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value))
+
+const toNodeId = (value: CommonCastGraphLink['source'] | CommonCastGraphLink['target']): string =>
+  typeof value === 'string' ? value : String(value)
+
+const buildLinkPath = (source: Point, target: Point): string => {
+  const dx = target.x - source.x
+  const c1x = source.x + dx * 0.35
+  const c2x = source.x + dx * 0.7
+  const curve = Math.sign(dx || 1) * 26
+  return `M ${source.x} ${source.y} C ${c1x} ${source.y - curve}, ${c2x} ${target.y + curve}, ${target.x} ${target.y}`
+}
 
 export const CommonCastGraph = ({ graphData, nodeSpacing }: CommonCastGraphProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const graphRef = useRef<ForceGraphMethods<PositionedNode, CommonCastGraphLink> | undefined>(undefined)
-  const [size, setSize] = useState({ width: 960, height: 560 })
-
-  const pinNode = (node: NodeObject<PositionedNode>) => {
-    if (node.x === undefined || node.y === undefined) {
-      return
-    }
-
-    node.fx = node.x
-    node.fy = node.y
-    node.vx = 0
-    node.vy = 0
-  }
+  const [size, setSize] = useState({ width: 980, height: 560 })
+  const [manualPositions, setManualPositions] = useState<Record<string, Point>>({})
+  const [dragState, setDragState] = useState<DragState | null>(null)
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -53,139 +56,242 @@ export const CommonCastGraph = ({ graphData, nodeSpacing }: CommonCastGraphProps
         return
       }
       setSize({
-        width: Math.max(460, Math.floor(next.width)),
+        width: Math.max(520, Math.floor(next.width)),
         height: Math.max(420, Math.floor(next.height)),
       })
     })
-    observer.observe(containerRef.current)
 
+    observer.observe(containerRef.current)
     return () => observer.disconnect()
   }, [])
 
-  const positionedGraphData = useMemo(() => {
-    const anchorDistance = Math.max(160, Math.floor(size.width * 0.3))
-    const nodes: PositionedNode[] = graphData.nodes.map((node) => {
-      if (node.kind === 'left-title') {
-        return {
-          ...node,
-          x: -anchorDistance,
-          y: 0,
-          fx: -anchorDistance,
-          fy: 0,
-          vx: 0,
-          vy: 0,
-        }
-      }
-      if (node.kind === 'right-title') {
-        return {
-          ...node,
-          x: anchorDistance,
-          y: 0,
-          fx: anchorDistance,
-          fy: 0,
-          vx: 0,
-          vy: 0,
-        }
-      }
-      return { ...node }
-    })
-
-    return {
-      nodes,
-      links: graphData.links.map((link) => ({ ...link })),
-    }
-  }, [graphData, size.width])
-
-  useEffect(() => {
-    if (!positionedGraphData.nodes.length) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      graphRef.current?.zoomToFit(650, 90)
-      graphRef.current?.d3ReheatSimulation()
-    }, 200)
-    return () => window.clearTimeout(timeoutId)
-  }, [positionedGraphData])
-
-  useEffect(() => {
-    if (!positionedGraphData.nodes.length || !graphRef.current) {
-      return
-    }
-
-    const chargeForce = graphRef.current.d3Force('charge') as
-      | { strength?: (value: number) => unknown; distanceMax?: (value: number) => unknown }
-      | undefined
-    const linkForce = graphRef.current.d3Force('link') as { distance?: (value: number) => unknown } | undefined
-
-    chargeForce?.strength?.(-95 * nodeSpacing)
-    chargeForce?.distanceMax?.(860 * nodeSpacing)
-    linkForce?.distance?.(82 * nodeSpacing)
-    graphRef.current.d3ReheatSimulation()
-  }, [nodeSpacing, positionedGraphData.nodes.length, positionedGraphData.links.length])
-
-  const nodeCanvasObject = useMemo(
-    () => (node: NodeObject<PositionedNode>, context: CanvasRenderingContext2D, globalScale: number) => {
-      const graphNode = node as unknown as PositionedNode
-      const x = node.x ?? 0
-      const y = node.y ?? 0
-      const baseRadius = isAnchorNode(graphNode.kind) ? 17 : 8
-      const radius = Math.max(5, baseRadius / Math.pow(globalScale, 0.15))
-
-      if (isAnchorNode(graphNode.kind)) {
-        context.shadowColor = graphNode.color
-        context.shadowBlur = 18
-      }
-      context.beginPath()
-      context.arc(x, y, radius, 0, 2 * Math.PI, false)
-      context.fillStyle = graphNode.color
-      context.fill()
-      context.shadowBlur = 0
-      context.lineWidth = 1.5
-      context.strokeStyle = 'rgba(255, 255, 255, 0.7)'
-      context.stroke()
-
-      const fontSize = isAnchorNode(graphNode.kind) ? 11 : 8
-      context.font = `${fontSize}px "Sora", sans-serif`
-      context.fillStyle = '#f4f8ff'
-      context.textAlign = 'left'
-      context.textBaseline = 'middle'
-      context.fillText(truncateLabel(graphNode.label, isAnchorNode(graphNode.kind) ? 25 : 18), x + radius + 5, y)
-    },
-    [],
+  const leftAnchorNode = useMemo(
+    () => graphData.nodes.find((node) => node.kind === 'left-title') ?? null,
+    [graphData.nodes],
   )
 
+  const rightAnchorNode = useMemo(
+    () => graphData.nodes.find((node) => node.kind === 'right-title') ?? null,
+    [graphData.nodes],
+  )
+
+  const sharedNodes = useMemo(
+    () => graphData.nodes.filter((node) => node.kind !== 'left-title' && node.kind !== 'right-title'),
+    [graphData.nodes],
+  )
+
+  const anchorPositions = useMemo(
+    () => ({
+      left: {
+        x: Math.round(size.width * 0.23),
+        y: Math.round(size.height * 0.5),
+      },
+      right: {
+        x: Math.round(size.width * 0.77),
+        y: Math.round(size.height * 0.5),
+      },
+      center: {
+        x: Math.round(size.width * 0.5),
+        y: Math.round(size.height * 0.5),
+      },
+    }),
+    [size.height, size.width],
+  )
+
+  const generatedPositions = useMemo(() => {
+    const positions: Record<string, Point> = {}
+    const spread = clamp(nodeSpacing, 0.8, 2.7)
+
+    sharedNodes.forEach((node, index) => {
+      const ringMagnitude = Math.sqrt(index + 1)
+      const radiusX = Math.min(size.width * 0.29, (30 + ringMagnitude * 28) * spread)
+      const radiusY = Math.min(size.height * 0.24, (24 + ringMagnitude * 22) * spread)
+      const theta = index * GOLDEN_ANGLE_RADIANS
+
+      positions[node.id] = {
+        x: anchorPositions.center.x + Math.cos(theta) * radiusX,
+        y: anchorPositions.center.y + Math.sin(theta) * radiusY,
+      }
+    })
+
+    return positions
+  }, [anchorPositions.center.x, anchorPositions.center.y, nodeSpacing, sharedNodes, size.height, size.width])
+
+  useEffect(() => {
+    if (!dragState) {
+      return
+    }
+
+    const onPointerMove = (event: globalThis.PointerEvent) => {
+      if (!containerRef.current) {
+        return
+      }
+
+      const bounds = containerRef.current.getBoundingClientRect()
+      const rawX = event.clientX - bounds.left - dragState.pointerOffsetX
+      const rawY = event.clientY - bounds.top - dragState.pointerOffsetY
+
+      const clampedPosition: Point = {
+        x: clamp(rawX, size.width * 0.08, size.width * 0.92),
+        y: clamp(rawY, size.height * 0.1, size.height * 0.9),
+      }
+
+      setManualPositions((previous) => ({
+        ...previous,
+        [dragState.nodeId]: clampedPosition,
+      }))
+    }
+
+    const onPointerEnd = () => {
+      setDragState(null)
+    }
+
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerEnd)
+    window.addEventListener('pointercancel', onPointerEnd)
+
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerEnd)
+      window.removeEventListener('pointercancel', onPointerEnd)
+    }
+  }, [dragState, size.height, size.width])
+
+  const pointByNodeId = useMemo(() => {
+    const points = new Map<string, Point>()
+
+    if (leftAnchorNode) {
+      points.set(leftAnchorNode.id, anchorPositions.left)
+    }
+    if (rightAnchorNode) {
+      points.set(rightAnchorNode.id, anchorPositions.right)
+    }
+
+    for (const node of sharedNodes) {
+      const position = manualPositions[node.id] ?? generatedPositions[node.id]
+      if (position) {
+        points.set(node.id, position)
+      }
+    }
+
+    return points
+  }, [
+    anchorPositions.left,
+    anchorPositions.right,
+    generatedPositions,
+    leftAnchorNode,
+    manualPositions,
+    rightAnchorNode,
+    sharedNodes,
+  ])
+
+  const handleNodePointerDown = (event: ReactPointerEvent<HTMLButtonElement>, nodeId: string) => {
+    if (!containerRef.current) {
+      return
+    }
+
+    const nodePoint = pointByNodeId.get(nodeId)
+    if (!nodePoint) {
+      return
+    }
+
+    const bounds = containerRef.current.getBoundingClientRect()
+    const pointerX = event.clientX - bounds.left
+    const pointerY = event.clientY - bounds.top
+
+    setDragState({
+      nodeId,
+      pointerOffsetX: pointerX - nodePoint.x,
+      pointerOffsetY: pointerY - nodePoint.y,
+    })
+  }
+
   return (
-    <div className="graph-shell" ref={containerRef}>
-      <ForceGraph2D
-        ref={graphRef}
-        graphData={positionedGraphData}
-        width={size.width}
-        height={size.height}
-        backgroundColor="rgba(0,0,0,0)"
-        nodeLabel={(node) => (node as unknown as PositionedNode).tooltip}
-        nodeVal={(node) => (node as unknown as PositionedNode).value}
-        nodeCanvasObject={nodeCanvasObject}
-        linkColor={(link) => (link as unknown as CommonCastGraphLink).color}
-        linkWidth={(link) => (link as unknown as CommonCastGraphLink).strength}
-        linkDirectionalParticles={1}
-        linkDirectionalParticleWidth={2.4}
-        linkDirectionalParticleColor={(link) => (link as unknown as CommonCastGraphLink).color}
-        d3AlphaDecay={0.045}
-        d3VelocityDecay={0.26}
-        cooldownTicks={130}
-        onNodeDragEnd={(node) => {
-          pinNode(node)
-          graphRef.current?.d3ReheatSimulation()
-        }}
-        onNodeClick={(node) => {
-          if (node.x === undefined || node.y === undefined) {
-            return
+    <div className="graph-shell magnetic-layout" ref={containerRef}>
+      <svg className="magnetic-links" viewBox={`0 0 ${size.width} ${size.height}`} preserveAspectRatio="none" aria-hidden>
+        {graphData.links.map((link, index) => {
+          const sourceId = toNodeId(link.source)
+          const targetId = toNodeId(link.target)
+          const sourcePoint = pointByNodeId.get(sourceId)
+          const targetPoint = pointByNodeId.get(targetId)
+
+          if (!sourcePoint || !targetPoint) {
+            return null
           }
-          graphRef.current?.centerAt(node.x, node.y, 500)
-          graphRef.current?.zoom(2.6, 450)
+
+          return (
+            <path
+              key={`${sourceId}-${targetId}-${index}`}
+              d={buildLinkPath(sourcePoint, targetPoint)}
+              stroke={link.color}
+              strokeWidth={Math.max(1, link.strength * 1.15)}
+              strokeLinecap="round"
+              fill="none"
+            />
+          )
+        })}
+      </svg>
+
+      <div
+        className="magnetic-overlap-zone"
+        style={{
+          left: `${anchorPositions.center.x}px`,
+          top: `${anchorPositions.center.y}px`,
         }}
       />
+
+      {leftAnchorNode ? (
+        <div
+          className="magnetic-anchor magnetic-anchor-left"
+          title={leftAnchorNode.tooltip}
+          style={{
+            left: `${anchorPositions.left.x}px`,
+            top: `${anchorPositions.left.y}px`,
+            borderColor: leftAnchorNode.color,
+          }}
+        >
+          <span>{truncateLabel(leftAnchorNode.label, 24)}</span>
+        </div>
+      ) : null}
+
+      {rightAnchorNode ? (
+        <div
+          className="magnetic-anchor magnetic-anchor-right"
+          title={rightAnchorNode.tooltip}
+          style={{
+            left: `${anchorPositions.right.x}px`,
+            top: `${anchorPositions.right.y}px`,
+            borderColor: rightAnchorNode.color,
+          }}
+        >
+          <span>{truncateLabel(rightAnchorNode.label, 24)}</span>
+        </div>
+      ) : null}
+
+      {sharedNodes.map((node) => {
+        const position = pointByNodeId.get(node.id)
+        if (!position) {
+          return null
+        }
+
+        return (
+          <button
+            key={node.id}
+            type="button"
+            className={`magnetic-node${dragState?.nodeId === node.id ? ' magnetic-node-dragging' : ''}`}
+            title={node.tooltip}
+            style={{
+              left: `${position.x}px`,
+              top: `${position.y}px`,
+              borderColor: `${node.color}77`,
+            }}
+            onPointerDown={(event) => handleNodePointerDown(event, node.id)}
+          >
+            <span className="magnetic-node-dot" style={{ background: node.color }} />
+            <span>{truncateLabel(node.label, 24)}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
