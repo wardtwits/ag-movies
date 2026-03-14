@@ -52,6 +52,8 @@ export const CommonCastForm = ({
         />
       </label>
 
+      {showRightInput ? <div className="compare-form-divider" aria-hidden="true" /> : null}
+
       {showRightInput ? (
         <label className="input-group">
           <span className="input-label">{rightLabel}</span>

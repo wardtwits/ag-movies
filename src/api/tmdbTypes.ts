@@ -9,6 +9,7 @@ export interface TmdbPersonSearchResponse {
 export interface TmdbSearchResult {
   id: number
   media_type: string
+  genre_ids?: number[]
   title?: string
   name?: string
   original_title?: string
@@ -64,6 +65,7 @@ export interface TmdbAggregateCastMember {
 export interface TmdbPersonCredit {
   id: number
   media_type: string
+  genre_ids?: number[]
   title?: string
   name?: string
   original_title?: string

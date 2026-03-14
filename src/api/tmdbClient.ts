@@ -7,6 +7,7 @@ import type {
   PersonSummary,
   PersonWithCredits,
 } from '../domain/media'
+import { isVisibleCastMember, isVisibleMediaCredit, isVisibleMediaTitle } from '../domain/mediaFilters'
 import type {
   TmdbAggregateCastMember,
   TmdbAggregateCreditsResponse,
@@ -52,6 +53,7 @@ const mapSearchResultToMediaTitle = (result: TmdbSearchResult): MediaTitle | nul
       result.media_type === 'movie'
         ? (result.original_title ?? title)
         : (result.original_name ?? title),
+    genreIds: result.genre_ids ?? [],
     releaseDate: result.media_type === 'movie' ? result.release_date : result.first_air_date,
     popularity: result.popularity ?? 0,
     voteCount: result.vote_count ?? 0,
@@ -93,6 +95,7 @@ const mapPersonCreditToMedia = (credit: TmdbPersonCredit): MediaCredit | null =>
       credit.media_type === 'movie'
         ? (credit.original_title ?? title)
         : (credit.original_name ?? title),
+    genreIds: credit.genre_ids ?? [],
     releaseDate: credit.media_type === 'movie' ? credit.release_date : credit.first_air_date,
     popularity: credit.popularity ?? 0,
     voteCount: credit.vote_count ?? 0,
@@ -227,6 +230,7 @@ export const searchMediaTitles = async (query: string): Promise<MediaTitle[]> =>
   return response.results
     .map(mapSearchResultToMediaTitle)
     .filter((candidate): candidate is MediaTitle => candidate !== null)
+    .filter(isVisibleMediaTitle)
 }
 
 export const searchPeople = async (query: string): Promise<PersonSummary[]> => {
@@ -250,7 +254,9 @@ export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]
         },
       )
 
-      return dedupeCastMembers(aggregateResponse.cast.map(mapAggregateCastMember)).sort((left, right) => {
+      return dedupeCastMembers(aggregateResponse.cast.map(mapAggregateCastMember))
+        .filter(isVisibleCastMember)
+        .sort((left, right) => {
         if (left.order !== right.order) {
           return left.order - right.order
         }
@@ -261,7 +267,9 @@ export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]
         language: 'en-US',
       })
 
-      return dedupeCastMembers(fallbackResponse.cast.map(mapCastMember)).sort((left, right) => {
+      return dedupeCastMembers(fallbackResponse.cast.map(mapCastMember))
+        .filter(isVisibleCastMember)
+        .sort((left, right) => {
         if (left.order !== right.order) {
           return left.order - right.order
         }
@@ -274,7 +282,9 @@ export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]
     language: 'en-US',
   })
 
-  return dedupeCastMembers(movieCreditsResponse.cast.map(mapCastMember)).sort((left, right) => {
+  return dedupeCastMembers(movieCreditsResponse.cast.map(mapCastMember))
+    .filter(isVisibleCastMember)
+    .sort((left, right) => {
     if (left.order !== right.order) {
       return left.order - right.order
     }
@@ -290,6 +300,7 @@ export const fetchCreditsForPerson = async (personId: number): Promise<MediaCred
   const mappedCredits = response.cast
     .map(mapPersonCreditToMedia)
     .filter((candidate): candidate is MediaCredit => candidate !== null)
+    .filter(isVisibleMediaCredit)
 
   return dedupeMediaCredits(mappedCredits).sort((left, right) => {
     if (right.popularity !== left.popularity) {

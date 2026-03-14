@@ -190,23 +190,25 @@ function App() {
         : 'Searching for the shortest Kevin Bacon connection...'
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell app-shell-${searchMode}`}>
       <div className="ambient-glow ambient-left" />
       <div className="ambient-glow ambient-right" />
       <main className="app-main">
         <header className="hero">
           <p className="eyebrow">TMDB Cast Explorer</p>
-          <h1>Find Shared Connections Between Two Inputs</h1>
+          <h1>
+            Cast<span className="hero-accent">Link</span>
+          </h1>
           <p className="hero-copy">
-            Compare two movies/TV titles to find shared actors, or compare two actors to find all TV/film titles they
-            have in common. Bacon&apos;s Law mode traces how one actor connects back to Kevin Bacon.
+            Uncover every shared cinematic moment between your favorite stars. Compare titles, compare actors, or trace
+            a Bacon number back to Kevin Bacon.
           </p>
         </header>
 
         <section className="panel">
           <div className="search-mode" role="radiogroup" aria-label="Search mode">
             <span className="search-mode-text">Search by</span>
-            <label className="search-mode-option">
+            <label className={`search-mode-option${searchMode === 'actor' ? ' search-mode-option-active' : ''}`}>
               <span>Actor</span>
               <input
                 type="radio"
@@ -216,7 +218,7 @@ function App() {
                 onChange={() => handleSearchModeChange('actor')}
               />
             </label>
-            <label className="search-mode-option">
+            <label className={`search-mode-option${searchMode === 'tv-film' ? ' search-mode-option-active' : ''}`}>
               <span>TV/Film</span>
               <input
                 type="radio"
@@ -226,7 +228,7 @@ function App() {
                 onChange={() => handleSearchModeChange('tv-film')}
               />
             </label>
-            <label className="search-mode-option">
+            <label className={`search-mode-option${searchMode === 'bacon-law' ? ' search-mode-option-active' : ''}`}>
               <span>Bacon&apos;s Law</span>
               <input
                 type="radio"
@@ -237,6 +239,13 @@ function App() {
               />
             </label>
           </div>
+          <p className="panel-note">
+            {searchMode === 'tv-film'
+              ? 'Compare two movies or series and surface every shared cast connection.'
+              : searchMode === 'actor'
+                ? 'Enter two actors to reveal every title they have both appeared in.'
+                : 'Enter one actor and trace the shortest client-side path back to Kevin Bacon.'}
+          </p>
 
           <CommonCastForm
             leftTitle={leftTitle}
@@ -260,7 +269,11 @@ function App() {
 
         {activeResultExists ? (
           searchMode === 'bacon-law' && baconLawResult ? (
-            <section className="results">
+            <section className="results panel panel-results">
+              <div className="results-headline">
+                <p className="results-kicker">Degrees of Bacon</p>
+                <h2>Connection path found</h2>
+              </div>
               <div className="result-summary">
                 <div className="title-pill left-pill">{baconLawResult.actor.person.name}</div>
                 <div className="summary-meta">
@@ -272,7 +285,11 @@ function App() {
               <BaconPathGraph result={baconLawResult} />
             </section>
           ) : (
-          <section className="results">
+          <section className="results panel panel-results">
+            <div className="results-headline">
+              <p className="results-kicker">{searchMode === 'tv-film' ? 'Shared cast' : 'Shared credits'}</p>
+              <h2>{searchMode === 'tv-film' ? 'Overlap map' : 'Common filmography'}</h2>
+            </div>
             <div className="result-summary">
               <div className="title-pill left-pill">{leftSummaryLabel}</div>
               <div className="summary-meta">

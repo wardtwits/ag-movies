@@ -5,6 +5,7 @@ export interface MediaTitle {
   mediaType: MediaType
   title: string
   originalTitle: string
+  genreIds: number[]
   releaseDate?: string
   popularity: number
   voteCount: number
