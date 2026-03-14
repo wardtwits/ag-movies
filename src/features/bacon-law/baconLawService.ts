@@ -1,4 +1,4 @@
-import { fetchCastForMedia, fetchCreditsForPerson, resolveActorToCredits } from '../../api/tmdbClient'
+import { fetchCastForMedia, fetchCreditsForPerson, resolveActor, resolveActorToCredits } from '../../api/tmdbClient'
 import type { CastMember, MediaCredit, PersonSummary, PersonWithCredits } from '../../domain/media'
 import type { BaconConnectionStep, BaconLawResult } from './types'
 
@@ -239,8 +239,8 @@ const buildResult = (
   }
 }
 
-export const findBaconConnection = async (actorQuery: string): Promise<BaconLawResult> => {
-  const [actor, kevinBacon] = await Promise.all([resolveActorToCredits(actorQuery), loadKevinBacon()])
+export const findBaconConnectionFromPerson = async (actorPerson: PersonSummary): Promise<BaconLawResult> => {
+  const [actor, kevinBacon] = await Promise.all([loadPersonWithCredits(actorPerson), loadKevinBacon()])
 
   if (actor.person.id === kevinBacon.person.id) {
     return {
@@ -306,4 +306,9 @@ export const findBaconConnection = async (actorQuery: string): Promise<BaconLawR
   throw new Error(
     'No Bacon path was found within the current client-side search window. Try a more specific actor name or another search.',
   )
+}
+
+export const findBaconConnection = async (actorQuery: string): Promise<BaconLawResult> => {
+  const actor = await resolveActor(actorQuery)
+  return findBaconConnectionFromPerson(actor)
 }

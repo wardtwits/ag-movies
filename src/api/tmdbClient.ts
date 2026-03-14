@@ -73,6 +73,7 @@ const mapCastMember = (member: TmdbCastMember): CastMember => ({
 const mapPersonSearchResult = (result: TmdbPersonSearchResult): PersonSummary => ({
   id: result.id,
   name: result.name,
+  knownForDepartment: result.known_for_department?.trim() || undefined,
   popularity: result.popularity ?? 0,
   profilePath: result.profile_path,
 })
@@ -154,6 +155,7 @@ const dedupeMediaCredits = (credits: MediaCredit[]): MediaCredit[] => {
 const requestTmdb = async <T>(
   path: string,
   params?: Record<string, string | number | boolean | undefined>,
+  signal?: AbortSignal,
 ): Promise<T> => {
   const url = new URL(`${TMDB_API_BASE_URL}${path}`)
   if (params) {
@@ -169,6 +171,7 @@ const requestTmdb = async <T>(
       Authorization: `Bearer ${readBearerToken()}`,
       Accept: 'application/json',
     },
+    signal,
   })
 
   if (!response.ok) {
@@ -219,29 +222,60 @@ const pickBestPersonMatch = (query: string, results: PersonSummary[]): PersonSum
   return [...results].sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))[0]
 }
 
-export const searchMediaTitles = async (query: string): Promise<MediaTitle[]> => {
+export const searchMediaTitles = async (query: string, signal?: AbortSignal): Promise<MediaTitle[]> => {
   const response = await requestTmdb<TmdbSearchResponse>('/search/multi', {
     query,
     language: 'en-US',
     include_adult: false,
     page: 1,
-  })
+  }, signal)
 
   return response.results
     .map(mapSearchResultToMediaTitle)
     .filter((candidate): candidate is MediaTitle => candidate !== null)
     .filter(isVisibleMediaTitle)
+    .sort((left, right) => scoreMatch(right, query) - scoreMatch(left, query))
 }
 
-export const searchPeople = async (query: string): Promise<PersonSummary[]> => {
+export const searchPeople = async (query: string, signal?: AbortSignal): Promise<PersonSummary[]> => {
   const response = await requestTmdb<TmdbPersonSearchResponse>('/search/person', {
     query,
     language: 'en-US',
     include_adult: false,
     page: 1,
-  })
+  }, signal)
 
-  return response.results.map(mapPersonSearchResult)
+  return response.results
+    .map(mapPersonSearchResult)
+    .sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))
+}
+
+export const resolveTitle = async (query: string): Promise<MediaTitle> => {
+  const cleanQuery = query.trim()
+  if (!cleanQuery) {
+    throw new Error('Please enter a movie or TV title.')
+  }
+
+  const matches = await searchMediaTitles(cleanQuery)
+  if (!matches.length) {
+    throw new Error(`No movie or TV title was found for "${cleanQuery}".`)
+  }
+
+  return pickBestMatch(cleanQuery, matches)
+}
+
+export const resolveActor = async (query: string): Promise<PersonSummary> => {
+  const cleanQuery = query.trim()
+  if (!cleanQuery) {
+    throw new Error('Please enter an actor name.')
+  }
+
+  const matches = await searchPeople(cleanQuery)
+  if (!matches.length) {
+    throw new Error(`No actor was found for "${cleanQuery}".`)
+  }
+
+  return pickBestPersonMatch(cleanQuery, matches)
 }
 
 export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]> => {
@@ -314,17 +348,7 @@ export const fetchCreditsForPerson = async (personId: number): Promise<MediaCred
 }
 
 export const resolveTitleToCast = async (query: string): Promise<MediaWithCast> => {
-  const cleanQuery = query.trim()
-  if (!cleanQuery) {
-    throw new Error('Please enter a movie or TV title.')
-  }
-
-  const matches = await searchMediaTitles(cleanQuery)
-  if (!matches.length) {
-    throw new Error(`No movie or TV title was found for "${cleanQuery}".`)
-  }
-
-  const selectedMedia = pickBestMatch(cleanQuery, matches)
+  const selectedMedia = await resolveTitle(query)
   const cast = await fetchCastForMedia(selectedMedia)
 
   return {
@@ -334,17 +358,7 @@ export const resolveTitleToCast = async (query: string): Promise<MediaWithCast> 
 }
 
 export const resolveActorToCredits = async (query: string): Promise<PersonWithCredits> => {
-  const cleanQuery = query.trim()
-  if (!cleanQuery) {
-    throw new Error('Please enter an actor name.')
-  }
-
-  const matches = await searchPeople(cleanQuery)
-  if (!matches.length) {
-    throw new Error(`No actor was found for "${cleanQuery}".`)
-  }
-
-  const selectedActor = pickBestPersonMatch(cleanQuery, matches)
+  const selectedActor = await resolveActor(query)
   const credits = await fetchCreditsForPerson(selectedActor.id)
 
   return {

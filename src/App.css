@@ -215,6 +215,14 @@
   padding-top: 0.45rem;
 }
 
+.autocomplete-shell {
+  position: relative;
+}
+
+.autocomplete-input-shell {
+  position: relative;
+}
+
 .input-label {
   position: absolute;
   top: -0.15rem;
@@ -236,11 +244,17 @@
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(55, 53, 52, 0.78), rgba(35, 34, 34, 0.92));
   color: var(--text);
-  padding: 1rem 1rem 0.95rem;
+  padding: 1rem 3.6rem 0.95rem 1rem;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.95rem;
   outline: none;
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.input-group input.autocomplete-input-locked {
+  color: transparent;
+  caret-color: transparent;
+  user-select: none;
 }
 
 .input-group input::placeholder {
@@ -251,6 +265,179 @@
   border-color: rgba(255, 196, 188, 0.42);
   box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.13);
   transform: translateY(-1px);
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(30, 28, 28, 0.98), rgba(15, 14, 14, 0.98));
+  box-shadow: 0 26px 50px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(20px);
+}
+
+.autocomplete-selected-card {
+  position: absolute;
+  inset: 0.36rem 3.55rem 0.36rem 0.45rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  pointer-events: none;
+}
+
+.autocomplete-selected-thumb {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.8rem;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.autocomplete-selected-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.autocomplete-selected-copy strong {
+  font-size: 0.88rem;
+  line-height: 1.2;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-selected-copy span {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-list {
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  max-height: 23rem;
+  overflow-y: auto;
+}
+
+.autocomplete-list-item + .autocomplete-list-item {
+  margin-top: 0.22rem;
+}
+
+.autocomplete-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.72rem 0.78rem;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.autocomplete-option:hover,
+.autocomplete-option:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.autocomplete-thumb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.autocomplete-thumb-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+
+.autocomplete-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  align-content: center;
+}
+
+.autocomplete-copy strong {
+  font-size: 0.98rem;
+  line-height: 1.25;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-copy span {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.autocomplete-state {
+  padding: 1rem;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+.autocomplete-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.autocomplete-clear:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.autocomplete-clear:focus-visible {
+  outline: 2px solid rgba(255, 180, 170, 0.5);
+  outline-offset: 2px;
 }
 
 .compare-form-divider {
@@ -885,5 +1072,22 @@
 
   .panel-note {
     text-align: left;
+  }
+
+  .autocomplete-selected-card {
+    gap: 0.6rem;
+  }
+
+  .autocomplete-selected-thumb {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .autocomplete-selected-copy strong {
+    font-size: 0.82rem;
+  }
+
+  .autocomplete-selected-copy span {
+    font-size: 0.68rem;
   }
 }

@@ -1,3 +1,16 @@
+import { SearchAutocompleteField, type AutocompleteEntity } from './SearchAutocompleteField'
+
+interface AutocompleteFieldConfig {
+  suggestions: AutocompleteEntity[]
+  selectedEntity: AutocompleteEntity | null
+  isLoading: boolean
+  minimumQueryLength: number
+  hasSearched: boolean
+  inputKind: 'media' | 'person'
+  onSelect: (entity: AutocompleteEntity) => void
+  onClearSelection: () => void
+}
+
 interface CommonCastFormProps {
   leftTitle: string
   rightTitle: string
@@ -9,6 +22,8 @@ interface CommonCastFormProps {
   submitLabel: string
   submitLoadingLabel: string
   secondaryActionLabel?: string
+  leftAutocomplete: AutocompleteFieldConfig
+  rightAutocomplete?: AutocompleteFieldConfig
   onLeftTitleChange: (value: string) => void
   onRightTitleChange?: (value: string) => void
   onSubmit: () => void
@@ -27,6 +42,8 @@ export const CommonCastForm = ({
   submitLabel,
   submitLoadingLabel,
   secondaryActionLabel,
+  leftAutocomplete,
+  rightAutocomplete,
   onLeftTitleChange,
   onRightTitleChange,
   onSubmit,
@@ -46,30 +63,40 @@ export const CommonCastForm = ({
         }
       }}
     >
-      <label className="input-group">
-        <span className="input-label">{leftLabel}</span>
-        <input
-          value={leftTitle}
-          onChange={(event) => onLeftTitleChange(event.target.value)}
-          placeholder={leftPlaceholder}
-          autoComplete="off"
-          required
-        />
-      </label>
+      <SearchAutocompleteField
+        label={leftLabel}
+        value={leftTitle}
+        placeholder={leftPlaceholder}
+        required
+        inputKind={leftAutocomplete.inputKind}
+        suggestions={leftAutocomplete.suggestions}
+        selectedEntity={leftAutocomplete.selectedEntity}
+        isLoading={leftAutocomplete.isLoading}
+        minimumQueryLength={leftAutocomplete.minimumQueryLength}
+        hasSearched={leftAutocomplete.hasSearched}
+        onChange={onLeftTitleChange}
+        onSelect={leftAutocomplete.onSelect}
+        onClearSelection={leftAutocomplete.onClearSelection}
+      />
 
       {showRightInput ? <div className="compare-form-divider" aria-hidden="true" /> : null}
 
       {showRightInput ? (
-        <label className="input-group">
-          <span className="input-label">{rightLabel}</span>
-          <input
-            value={rightTitle}
-            onChange={(event) => onRightTitleChange?.(event.target.value)}
-            placeholder={rightPlaceholder}
-            autoComplete="off"
-            required
-          />
-        </label>
+        <SearchAutocompleteField
+          label={rightLabel ?? ''}
+          value={rightTitle}
+          placeholder={rightPlaceholder}
+          required
+          inputKind={rightAutocomplete?.inputKind ?? leftAutocomplete.inputKind}
+          suggestions={rightAutocomplete?.suggestions ?? []}
+          selectedEntity={rightAutocomplete?.selectedEntity ?? null}
+          isLoading={rightAutocomplete?.isLoading ?? false}
+          minimumQueryLength={rightAutocomplete?.minimumQueryLength ?? leftAutocomplete.minimumQueryLength}
+          hasSearched={rightAutocomplete?.hasSearched ?? false}
+          onChange={(value) => onRightTitleChange?.(value)}
+          onSelect={(entity) => rightAutocomplete?.onSelect(entity)}
+          onClearSelection={() => rightAutocomplete?.onClearSelection()}
+        />
       ) : null}
 
       <div className="compare-form-actions">

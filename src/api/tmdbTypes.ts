@@ -24,6 +24,7 @@ export interface TmdbSearchResult {
 export interface TmdbPersonSearchResult {
   id: number
   name: string
+  known_for_department?: string
   popularity?: number
   profile_path?: string | null
 }

@@ -29,6 +29,7 @@ export interface MediaWithCast {
 export interface PersonSummary {
   id: number
   name: string
+  knownForDepartment?: string
   popularity: number
   profilePath?: string | null
 }

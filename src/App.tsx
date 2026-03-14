@@ -1,12 +1,20 @@
 import { useMemo, useState } from 'react'
+import { resolveActor, resolveTitle } from './api/tmdbClient'
 import { BaconPathGraph } from './components/BaconPathGraph'
 import { CommonCastForm } from './components/CommonCastForm'
 import { CommonCastGraph } from './components/CommonCastGraph'
-import { findBaconConnection } from './features/bacon-law/baconLawService'
+import { findBaconConnectionFromPerson } from './features/bacon-law/baconLawService'
 import type { BaconLawResult } from './features/bacon-law/types'
-import { findCommonCast } from './features/common-cast/commonCastService'
+import type { MediaTitle, PersonSummary } from './domain/media'
+import {
+  AUTOCOMPLETE_MIN_QUERY_LENGTH,
+  fetchMediaSuggestions,
+  fetchPersonSuggestions,
+  useAutocompleteSuggestions,
+} from './features/autocomplete/useAutocompleteSuggestions'
+import { findCommonCastFromMedia } from './features/common-cast/commonCastService'
 import { buildCommonCastGraph } from './features/common-cast/graphModel'
-import { findCommonTitles } from './features/common-titles/commonTitlesService'
+import { findCommonTitlesFromPeople } from './features/common-titles/commonTitlesService'
 import { buildCommonTitlesGraph } from './features/common-titles/graphModel'
 import { findRandomCommonCastMatch, findRandomCommonTitlesMatch } from './features/random-match/randomMatchService'
 import type { CommonCastResult, SharedActorRoleCategory } from './features/common-cast/types'
@@ -32,11 +40,22 @@ const DEFAULT_ROLE_VISIBILITY: Record<SharedActorRoleCategory, boolean> = {
 }
 
 const EMPTY_GRAPH = { nodes: [], links: [] }
+type SearchSelection = MediaTitle | PersonSummary
+
+const isMediaSelection = (selection: SearchSelection | null): selection is MediaTitle =>
+  selection !== null && 'mediaType' in selection
+
+const isPersonSelection = (selection: SearchSelection | null): selection is PersonSummary =>
+  selection !== null && !('mediaType' in selection)
+
+const getSelectionLabel = (selection: SearchSelection): string => ('mediaType' in selection ? selection.title : selection.name)
 
 function App() {
   const [searchMode, setSearchMode] = useState<SearchMode>('tv-film')
   const [leftTitle, setLeftTitle] = useState('')
   const [rightTitle, setRightTitle] = useState('')
+  const [leftSelection, setLeftSelection] = useState<SearchSelection | null>(null)
+  const [rightSelection, setRightSelection] = useState<SearchSelection | null>(null)
   const [nodeSpacing, setNodeSpacing] = useState(1.5)
   const [roleVisibility, setRoleVisibility] = useState<Record<SharedActorRoleCategory, boolean>>({
     ...DEFAULT_ROLE_VISIBILITY,
@@ -46,6 +65,22 @@ function App() {
   const [commonCastResult, setCommonCastResult] = useState<CommonCastResult | null>(null)
   const [commonTitlesResult, setCommonTitlesResult] = useState<CommonTitlesResult | null>(null)
   const [baconLawResult, setBaconLawResult] = useState<BaconLawResult | null>(null)
+  const leftMediaAutocomplete = useAutocompleteSuggestions(leftTitle, {
+    enabled: searchMode === 'tv-film',
+    loader: fetchMediaSuggestions,
+  })
+  const rightMediaAutocomplete = useAutocompleteSuggestions(rightTitle, {
+    enabled: searchMode === 'tv-film',
+    loader: fetchMediaSuggestions,
+  })
+  const leftPersonAutocomplete = useAutocompleteSuggestions(leftTitle, {
+    enabled: searchMode !== 'tv-film',
+    loader: fetchPersonSuggestions,
+  })
+  const rightPersonAutocomplete = useAutocompleteSuggestions(rightTitle, {
+    enabled: searchMode === 'actor',
+    loader: fetchPersonSuggestions,
+  })
 
   const filteredCastResult = useMemo(() => {
     if (!commonCastResult) {
@@ -87,7 +122,49 @@ function App() {
     setCommonCastResult(null)
     setCommonTitlesResult(null)
     setBaconLawResult(null)
+    setLeftSelection(null)
+    setRightSelection(null)
     setRoleVisibility({ ...DEFAULT_ROLE_VISIBILITY })
+  }
+
+  const handleLeftInputChange = (value: string) => {
+    setLeftTitle(value)
+    setErrorMessage(null)
+    if (leftSelection && getSelectionLabel(leftSelection) !== value) {
+      setLeftSelection(null)
+    }
+  }
+
+  const handleRightInputChange = (value: string) => {
+    setRightTitle(value)
+    setErrorMessage(null)
+    if (rightSelection && getSelectionLabel(rightSelection) !== value) {
+      setRightSelection(null)
+    }
+  }
+
+  const handleLeftSelection = (selection: SearchSelection) => {
+    setLeftSelection(selection)
+    setLeftTitle(getSelectionLabel(selection))
+    setErrorMessage(null)
+  }
+
+  const handleRightSelection = (selection: SearchSelection) => {
+    setRightSelection(selection)
+    setRightTitle(getSelectionLabel(selection))
+    setErrorMessage(null)
+  }
+
+  const clearLeftSelection = () => {
+    setLeftSelection(null)
+    setLeftTitle('')
+    setErrorMessage(null)
+  }
+
+  const clearRightSelection = () => {
+    setRightSelection(null)
+    setRightTitle('')
+    setErrorMessage(null)
   }
 
   const handleSubmit = async () => {
@@ -96,17 +173,36 @@ function App() {
 
     try {
       if (searchMode === 'tv-film') {
-        const result = await findCommonCast(leftTitle, rightTitle)
+        const [leftMedia, rightMedia] = await Promise.all([
+          isMediaSelection(leftSelection) ? Promise.resolve(leftSelection) : resolveTitle(leftTitle),
+          isMediaSelection(rightSelection) ? Promise.resolve(rightSelection) : resolveTitle(rightTitle),
+        ])
+        const result = await findCommonCastFromMedia(leftMedia, rightMedia)
+        setLeftSelection(leftMedia)
+        setRightSelection(rightMedia)
+        setLeftTitle(leftMedia.title)
+        setRightTitle(rightMedia.title)
         setCommonCastResult(result)
         setCommonTitlesResult(null)
         setBaconLawResult(null)
       } else if (searchMode === 'actor') {
-        const result = await findCommonTitles(leftTitle, rightTitle)
+        const [leftActor, rightActor] = await Promise.all([
+          isPersonSelection(leftSelection) ? Promise.resolve(leftSelection) : resolveActor(leftTitle),
+          isPersonSelection(rightSelection) ? Promise.resolve(rightSelection) : resolveActor(rightTitle),
+        ])
+        const result = await findCommonTitlesFromPeople(leftActor, rightActor)
+        setLeftSelection(leftActor)
+        setRightSelection(rightActor)
+        setLeftTitle(leftActor.name)
+        setRightTitle(rightActor.name)
         setCommonTitlesResult(result)
         setCommonCastResult(null)
         setBaconLawResult(null)
       } else {
-        const result = await findBaconConnection(leftTitle)
+        const actor = isPersonSelection(leftSelection) ? leftSelection : await resolveActor(leftTitle)
+        const result = await findBaconConnectionFromPerson(actor)
+        setLeftSelection(actor)
+        setLeftTitle(actor.name)
         setBaconLawResult(result)
         setCommonCastResult(null)
         setCommonTitlesResult(null)
@@ -136,6 +232,8 @@ function App() {
         const { selection, result } = await findRandomCommonCastMatch()
         setLeftTitle(selection.left.title)
         setRightTitle(selection.right.title)
+        setLeftSelection(selection.left)
+        setRightSelection(selection.right)
         setCommonCastResult(result)
         setCommonTitlesResult(null)
         setBaconLawResult(null)
@@ -143,6 +241,8 @@ function App() {
         const { selection, result } = await findRandomCommonTitlesMatch()
         setLeftTitle(selection.left.name)
         setRightTitle(selection.right.name)
+        setLeftSelection(selection.left)
+        setRightSelection(selection.right)
         setCommonTitlesResult(result)
         setCommonCastResult(null)
         setBaconLawResult(null)
@@ -226,6 +326,54 @@ function App() {
         ? 'Resolving actors and matching titles...'
         : 'Searching for the shortest Kevin Bacon connection...'
 
+  const leftAutocomplete =
+    searchMode === 'tv-film'
+      ? {
+          suggestions: leftMediaAutocomplete.suggestions,
+          selectedEntity: isMediaSelection(leftSelection) ? leftSelection : null,
+          isLoading: leftMediaAutocomplete.isLoading,
+          minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
+          hasSearched: leftMediaAutocomplete.hasSearched,
+          inputKind: 'media' as const,
+          onSelect: handleLeftSelection,
+          onClearSelection: clearLeftSelection,
+        }
+      : {
+          suggestions: leftPersonAutocomplete.suggestions,
+          selectedEntity: isPersonSelection(leftSelection) ? leftSelection : null,
+          isLoading: leftPersonAutocomplete.isLoading,
+          minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
+          hasSearched: leftPersonAutocomplete.hasSearched,
+          inputKind: 'person' as const,
+          onSelect: handleLeftSelection,
+          onClearSelection: clearLeftSelection,
+        }
+
+  const rightAutocomplete =
+    searchMode === 'tv-film'
+      ? {
+          suggestions: rightMediaAutocomplete.suggestions,
+          selectedEntity: isMediaSelection(rightSelection) ? rightSelection : null,
+          isLoading: rightMediaAutocomplete.isLoading,
+          minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
+          hasSearched: rightMediaAutocomplete.hasSearched,
+          inputKind: 'media' as const,
+          onSelect: handleRightSelection,
+          onClearSelection: clearRightSelection,
+        }
+      : searchMode === 'actor'
+        ? {
+            suggestions: rightPersonAutocomplete.suggestions,
+            selectedEntity: isPersonSelection(rightSelection) ? rightSelection : null,
+            isLoading: rightPersonAutocomplete.isLoading,
+            minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
+            hasSearched: rightPersonAutocomplete.hasSearched,
+            inputKind: 'person' as const,
+            onSelect: handleRightSelection,
+            onClearSelection: clearRightSelection,
+          }
+        : undefined
+
   return (
     <div className={`app-shell app-shell-${searchMode}`}>
       <div className="ambient-glow ambient-left" />
@@ -294,8 +442,10 @@ function App() {
             submitLabel={activeFormContent.submitLabel}
             submitLoadingLabel={activeFormContent.submitLoadingLabel}
             secondaryActionLabel={searchMode === 'bacon-law' ? undefined : 'Random Match'}
-            onLeftTitleChange={setLeftTitle}
-            onRightTitleChange={setRightTitle}
+            leftAutocomplete={leftAutocomplete}
+            rightAutocomplete={rightAutocomplete}
+            onLeftTitleChange={handleLeftInputChange}
+            onRightTitleChange={handleRightInputChange}
             onSubmit={handleSubmit}
             onSecondaryAction={searchMode === 'bacon-law' ? undefined : handleRandomMatch}
             showRightInput={activeFormContent.showRightInput}
