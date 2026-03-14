@@ -8,9 +8,11 @@ This app is frontend-only and deployable to GitHub Pages (no server backend).
 
 - Search mode: TV/Film vs TV/Film
 - Search mode: Actor vs Actor
+- Search mode: Bacon's Law (actor to Kevin Bacon)
 - Resolve best TMDB matches
 - Compute intersection (shared actors or shared titles)
 - Visualize overlap in a draggable Magnetic Overlap Layout
+- Trace a Kevin Bacon connection path with degree count
 
 ## Reusable architecture
 
@@ -18,10 +20,12 @@ This app is frontend-only and deployable to GitHub Pages (no server backend).
 - `src/api/tmdbClient.ts`: typed TMDB client + title resolution
 - `src/features/common-cast/commonCastService.ts`: intersection logic
 - `src/features/common-titles/commonTitlesService.ts`: actor-to-actor overlap logic
+- `src/features/bacon-law/baconLawService.ts`: actor-to-Kevin Bacon connection search
 - `src/features/common-cast/graphModel.ts`: graph data transformation
 - `src/features/common-titles/graphModel.ts`: graph data transformation for shared titles
 - `src/components/CommonCastForm.tsx`: reusable compare form
 - `src/components/CommonCastGraph.tsx`: reusable Magnetic Overlap renderer
+- `src/components/BaconPathGraph.tsx`: path renderer for Bacon's Law results
 
 This split is designed so future compare modes (for example actor-to-actor, title-to-actor) can reuse API/domain layers and only add new feature modules.
 

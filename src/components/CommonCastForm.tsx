@@ -3,14 +3,15 @@ interface CommonCastFormProps {
   rightTitle: string
   isLoading: boolean
   leftLabel: string
-  rightLabel: string
+  rightLabel?: string
   leftPlaceholder: string
-  rightPlaceholder: string
+  rightPlaceholder?: string
   submitLabel: string
   submitLoadingLabel: string
   onLeftTitleChange: (value: string) => void
-  onRightTitleChange: (value: string) => void
+  onRightTitleChange?: (value: string) => void
   onSubmit: () => void
+  showRightInput?: boolean
 }
 
 export const CommonCastForm = ({
@@ -26,12 +27,13 @@ export const CommonCastForm = ({
   onLeftTitleChange,
   onRightTitleChange,
   onSubmit,
+  showRightInput = true,
 }: CommonCastFormProps) => {
-  const canSubmit = leftTitle.trim().length > 0 && rightTitle.trim().length > 0 && !isLoading
+  const canSubmit = leftTitle.trim().length > 0 && (!showRightInput || rightTitle.trim().length > 0) && !isLoading
 
   return (
     <form
-      className="compare-form"
+      className={`compare-form${showRightInput ? '' : ' compare-form-single'}`}
       onSubmit={(event) => {
         event.preventDefault()
         if (canSubmit) {
@@ -50,16 +52,18 @@ export const CommonCastForm = ({
         />
       </label>
 
-      <label className="input-group">
-        <span className="input-label">{rightLabel}</span>
-        <input
-          value={rightTitle}
-          onChange={(event) => onRightTitleChange(event.target.value)}
-          placeholder={rightPlaceholder}
-          autoComplete="off"
-          required
-        />
-      </label>
+      {showRightInput ? (
+        <label className="input-group">
+          <span className="input-label">{rightLabel}</span>
+          <input
+            value={rightTitle}
+            onChange={(event) => onRightTitleChange?.(event.target.value)}
+            placeholder={rightPlaceholder}
+            autoComplete="off"
+            required
+          />
+        </label>
+      ) : null}
 
       <button className="submit-button" type="submit" disabled={!canSubmit}>
         {isLoading ? submitLoadingLabel : submitLabel}

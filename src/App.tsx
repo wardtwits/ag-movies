@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
+import { BaconPathGraph } from './components/BaconPathGraph'
 import { CommonCastForm } from './components/CommonCastForm'
 import { CommonCastGraph } from './components/CommonCastGraph'
+import { findBaconConnection } from './features/bacon-law/baconLawService'
+import type { BaconLawResult } from './features/bacon-law/types'
 import { findCommonCast } from './features/common-cast/commonCastService'
 import { buildCommonCastGraph } from './features/common-cast/graphModel'
 import { findCommonTitles } from './features/common-titles/commonTitlesService'
@@ -9,7 +12,7 @@ import type { CommonCastResult, SharedActorRoleCategory } from './features/commo
 import type { CommonTitlesResult } from './features/common-titles/types'
 import './App.css'
 
-type SearchMode = 'tv-film' | 'actor'
+type SearchMode = 'tv-film' | 'actor' | 'bacon-law'
 
 const ROLE_LEGEND_ITEMS: Array<{
   category: SharedActorRoleCategory
@@ -41,6 +44,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [commonCastResult, setCommonCastResult] = useState<CommonCastResult | null>(null)
   const [commonTitlesResult, setCommonTitlesResult] = useState<CommonTitlesResult | null>(null)
+  const [baconLawResult, setBaconLawResult] = useState<BaconLawResult | null>(null)
 
   const filteredCastResult = useMemo(() => {
     if (!commonCastResult) {
@@ -81,6 +85,7 @@ function App() {
     setErrorMessage(null)
     setCommonCastResult(null)
     setCommonTitlesResult(null)
+    setBaconLawResult(null)
     setRoleVisibility({ ...DEFAULT_ROLE_VISIBILITY })
   }
 
@@ -93,14 +98,22 @@ function App() {
         const result = await findCommonCast(leftTitle, rightTitle)
         setCommonCastResult(result)
         setCommonTitlesResult(null)
-      } else {
+        setBaconLawResult(null)
+      } else if (searchMode === 'actor') {
         const result = await findCommonTitles(leftTitle, rightTitle)
         setCommonTitlesResult(result)
         setCommonCastResult(null)
+        setBaconLawResult(null)
+      } else {
+        const result = await findBaconConnection(leftTitle)
+        setBaconLawResult(result)
+        setCommonCastResult(null)
+        setCommonTitlesResult(null)
       }
     } catch (error) {
       setCommonCastResult(null)
       setCommonTitlesResult(null)
+      setBaconLawResult(null)
       const message = error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.'
       setErrorMessage(message)
     } finally {
@@ -108,9 +121,15 @@ function App() {
     }
   }
 
-  const activeResultExists = searchMode === 'tv-film' ? commonCastResult !== null : commonTitlesResult !== null
+  const activeResultExists =
+    searchMode === 'tv-film'
+      ? commonCastResult !== null
+      : searchMode === 'actor'
+        ? commonTitlesResult !== null
+        : baconLawResult !== null
 
-  const rawSharedCount = searchMode === 'tv-film' ? (commonCastResult?.sharedActors.length ?? 0) : (commonTitlesResult?.sharedTitles.length ?? 0)
+  const rawSharedCount =
+    searchMode === 'tv-film' ? (commonCastResult?.sharedActors.length ?? 0) : (commonTitlesResult?.sharedTitles.length ?? 0)
 
   const shownSharedCount =
     searchMode === 'tv-film' ? (filteredCastResult?.sharedActors.length ?? 0) : (commonTitlesResult?.sharedTitles.length ?? 0)
@@ -147,8 +166,28 @@ function App() {
           submitLoadingLabel: 'Matching Titles...',
         }
 
+  const activeFormContent =
+    searchMode === 'bacon-law'
+      ? {
+          leftLabel: 'Actor',
+          rightLabel: '',
+          leftPlaceholder: 'Example: Carrie Fisher',
+          rightPlaceholder: '',
+          submitLabel: 'Find Degrees of Bacon',
+          submitLoadingLabel: 'Finding Degrees of Bacon...',
+          showRightInput: false,
+        }
+      : {
+          ...formContent,
+          showRightInput: true,
+        }
+
   const loadingMessage =
-    searchMode === 'tv-film' ? 'Resolving titles and matching casts...' : 'Resolving actors and matching titles...'
+    searchMode === 'tv-film'
+      ? 'Resolving titles and matching casts...'
+      : searchMode === 'actor'
+        ? 'Resolving actors and matching titles...'
+        : 'Searching for the shortest Kevin Bacon connection...'
 
   return (
     <div className="app-shell">
@@ -160,7 +199,7 @@ function App() {
           <h1>Find Shared Connections Between Two Inputs</h1>
           <p className="hero-copy">
             Compare two movies/TV titles to find shared actors, or compare two actors to find all TV/film titles they
-            have in common.
+            have in common. Bacon&apos;s Law mode traces how one actor connects back to Kevin Bacon.
           </p>
         </header>
 
@@ -187,21 +226,32 @@ function App() {
                 onChange={() => handleSearchModeChange('tv-film')}
               />
             </label>
+            <label className="search-mode-option">
+              <span>Bacon&apos;s Law</span>
+              <input
+                type="radio"
+                name="search-mode"
+                value="bacon-law"
+                checked={searchMode === 'bacon-law'}
+                onChange={() => handleSearchModeChange('bacon-law')}
+              />
+            </label>
           </div>
 
           <CommonCastForm
             leftTitle={leftTitle}
             rightTitle={rightTitle}
             isLoading={isLoading}
-            leftLabel={formContent.leftLabel}
-            rightLabel={formContent.rightLabel}
-            leftPlaceholder={formContent.leftPlaceholder}
-            rightPlaceholder={formContent.rightPlaceholder}
-            submitLabel={formContent.submitLabel}
-            submitLoadingLabel={formContent.submitLoadingLabel}
+            leftLabel={activeFormContent.leftLabel}
+            rightLabel={activeFormContent.rightLabel}
+            leftPlaceholder={activeFormContent.leftPlaceholder}
+            rightPlaceholder={activeFormContent.rightPlaceholder}
+            submitLabel={activeFormContent.submitLabel}
+            submitLoadingLabel={activeFormContent.submitLoadingLabel}
             onLeftTitleChange={setLeftTitle}
             onRightTitleChange={setRightTitle}
             onSubmit={handleSubmit}
+            showRightInput={activeFormContent.showRightInput}
           />
         </section>
 
@@ -209,6 +259,19 @@ function App() {
         {errorMessage ? <p className="status status-error">{errorMessage}</p> : null}
 
         {activeResultExists ? (
+          searchMode === 'bacon-law' && baconLawResult ? (
+            <section className="results">
+              <div className="result-summary">
+                <div className="title-pill left-pill">{baconLawResult.actor.person.name}</div>
+                <div className="summary-meta">
+                  <span>{`Bacon number ${baconLawResult.degree}`}</span>
+                </div>
+                <div className="title-pill right-pill">{baconLawResult.kevinBacon.person.name}</div>
+              </div>
+
+              <BaconPathGraph result={baconLawResult} />
+            </section>
+          ) : (
           <section className="results">
             <div className="result-summary">
               <div className="title-pill left-pill">{leftSummaryLabel}</div>
@@ -283,6 +346,7 @@ function App() {
               </p>
             )}
           </section>
+          )
         ) : null}
       </main>
     </div>
