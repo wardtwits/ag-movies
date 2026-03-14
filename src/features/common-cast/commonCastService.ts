@@ -1,5 +1,5 @@
-import { resolveTitleToCast } from '../../api/tmdbClient'
-import type { CastMember } from '../../domain/media'
+import { fetchCastForMedia, resolveTitleToCast } from '../../api/tmdbClient'
+import type { CastMember, MediaTitle, MediaWithCast } from '../../domain/media'
 import type { CommonCastResult, SharedActor } from './types'
 
 const sanitizeCharacter = (value?: string): string | undefined => value?.trim() || undefined
@@ -35,9 +35,7 @@ const combineMember = (left: CastMember, right: CastMember): SharedActor => {
   }
 }
 
-export const findCommonCast = async (leftQuery: string, rightQuery: string): Promise<CommonCastResult> => {
-  const [left, right] = await Promise.all([resolveTitleToCast(leftQuery), resolveTitleToCast(rightQuery)])
-
+const buildCommonCastResult = (left: MediaWithCast, right: MediaWithCast): CommonCastResult => {
   const leftById = new Map<number, CastMember>(left.cast.map((member) => [member.id, member]))
   const sharedActors = right.cast
     .filter((member) => leftById.has(member.id))
@@ -54,4 +52,18 @@ export const findCommonCast = async (leftQuery: string, rightQuery: string): Pro
     right,
     sharedActors,
   }
+}
+
+export const findCommonCastFromMedia = async (leftMedia: MediaTitle, rightMedia: MediaTitle): Promise<CommonCastResult> => {
+  const [leftCast, rightCast] = await Promise.all([fetchCastForMedia(leftMedia), fetchCastForMedia(rightMedia)])
+
+  return buildCommonCastResult(
+    { media: leftMedia, cast: leftCast },
+    { media: rightMedia, cast: rightCast },
+  )
+}
+
+export const findCommonCast = async (leftQuery: string, rightQuery: string): Promise<CommonCastResult> => {
+  const [left, right] = await Promise.all([resolveTitleToCast(leftQuery), resolveTitleToCast(rightQuery)])
+  return buildCommonCastResult(left, right)
 }

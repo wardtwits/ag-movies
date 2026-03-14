@@ -8,9 +8,11 @@ interface CommonCastFormProps {
   rightPlaceholder?: string
   submitLabel: string
   submitLoadingLabel: string
+  secondaryActionLabel?: string
   onLeftTitleChange: (value: string) => void
   onRightTitleChange?: (value: string) => void
   onSubmit: () => void
+  onSecondaryAction?: () => void
   showRightInput?: boolean
 }
 
@@ -24,12 +26,15 @@ export const CommonCastForm = ({
   rightPlaceholder,
   submitLabel,
   submitLoadingLabel,
+  secondaryActionLabel,
   onLeftTitleChange,
   onRightTitleChange,
   onSubmit,
+  onSecondaryAction,
   showRightInput = true,
 }: CommonCastFormProps) => {
   const canSubmit = leftTitle.trim().length > 0 && (!showRightInput || rightTitle.trim().length > 0) && !isLoading
+  const canUseSecondaryAction = Boolean(onSecondaryAction) && !isLoading
 
   return (
     <form
@@ -67,9 +72,21 @@ export const CommonCastForm = ({
         </label>
       ) : null}
 
-      <button className="submit-button" type="submit" disabled={!canSubmit}>
-        {isLoading ? submitLoadingLabel : submitLabel}
-      </button>
+      <div className="compare-form-actions">
+        {secondaryActionLabel && onSecondaryAction ? (
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={onSecondaryAction}
+            disabled={!canUseSecondaryAction}
+          >
+            {secondaryActionLabel}
+          </button>
+        ) : null}
+        <button className="submit-button" type="submit" disabled={!canSubmit}>
+          {isLoading ? submitLoadingLabel : submitLabel}
+        </button>
+      </div>
     </form>
   )
 }

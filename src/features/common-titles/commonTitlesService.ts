@@ -1,5 +1,5 @@
-import { resolveActorToCredits } from '../../api/tmdbClient'
-import type { MediaCredit } from '../../domain/media'
+import { fetchCreditsForPerson, resolveActorToCredits } from '../../api/tmdbClient'
+import type { MediaCredit, PersonSummary, PersonWithCredits } from '../../domain/media'
 import type { CommonTitlesResult, SharedTitle } from './types'
 
 const sanitizeCharacter = (value?: string): string | undefined => value?.trim() || undefined
@@ -17,9 +17,7 @@ const combineCredit = (left: MediaCredit, right: MediaCredit): SharedTitle => ({
   rightOrder: right.order,
 })
 
-export const findCommonTitles = async (leftActorQuery: string, rightActorQuery: string): Promise<CommonTitlesResult> => {
-  const [left, right] = await Promise.all([resolveActorToCredits(leftActorQuery), resolveActorToCredits(rightActorQuery)])
-
+const buildCommonTitlesResult = (left: PersonWithCredits, right: PersonWithCredits): CommonTitlesResult => {
   const leftByMediaKey = new Map<string, MediaCredit>(
     left.credits.map((credit) => [`${credit.mediaType}-${credit.id}`, credit]),
   )
@@ -41,4 +39,24 @@ export const findCommonTitles = async (leftActorQuery: string, rightActorQuery: 
     right,
     sharedTitles,
   }
+}
+
+export const findCommonTitlesFromPeople = async (
+  leftPerson: PersonSummary,
+  rightPerson: PersonSummary,
+): Promise<CommonTitlesResult> => {
+  const [leftCredits, rightCredits] = await Promise.all([
+    fetchCreditsForPerson(leftPerson.id),
+    fetchCreditsForPerson(rightPerson.id),
+  ])
+
+  return buildCommonTitlesResult(
+    { person: leftPerson, credits: leftCredits },
+    { person: rightPerson, credits: rightCredits },
+  )
+}
+
+export const findCommonTitles = async (leftActorQuery: string, rightActorQuery: string): Promise<CommonTitlesResult> => {
+  const [left, right] = await Promise.all([resolveActorToCredits(leftActorQuery), resolveActorToCredits(rightActorQuery)])
+  return buildCommonTitlesResult(left, right)
 }

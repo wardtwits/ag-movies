@@ -9,6 +9,7 @@ This app is frontend-only and deployable to GitHub Pages (no server backend).
 - Search mode: TV/Film vs TV/Film
 - Search mode: Actor vs Actor
 - Search mode: Bacon's Law (actor to Kevin Bacon)
+- Random Match for TV/Film and Actor modes using curated TMDB ID pairs
 - Resolve best TMDB matches
 - Compute intersection (shared actors or shared titles)
 - Visualize overlap in a draggable Magnetic Overlap Layout
@@ -21,6 +22,7 @@ This app is frontend-only and deployable to GitHub Pages (no server backend).
 - `src/features/common-cast/commonCastService.ts`: intersection logic
 - `src/features/common-titles/commonTitlesService.ts`: actor-to-actor overlap logic
 - `src/features/bacon-law/baconLawService.ts`: actor-to-Kevin Bacon connection search
+- `src/features/random-match/randomMatchService.ts`: curated random pairs that guarantee overlap without search calls
 - `src/features/common-cast/graphModel.ts`: graph data transformation
 - `src/features/common-titles/graphModel.ts`: graph data transformation for shared titles
 - `src/components/CommonCastForm.tsx`: reusable compare form

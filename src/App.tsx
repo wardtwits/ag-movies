@@ -8,6 +8,7 @@ import { findCommonCast } from './features/common-cast/commonCastService'
 import { buildCommonCastGraph } from './features/common-cast/graphModel'
 import { findCommonTitles } from './features/common-titles/commonTitlesService'
 import { buildCommonTitlesGraph } from './features/common-titles/graphModel'
+import { findRandomCommonCastMatch, findRandomCommonTitlesMatch } from './features/random-match/randomMatchService'
 import type { CommonCastResult, SharedActorRoleCategory } from './features/common-cast/types'
 import type { CommonTitlesResult } from './features/common-titles/types'
 import './App.css'
@@ -121,6 +122,42 @@ function App() {
     }
   }
 
+  const handleRandomMatch = async () => {
+    if (searchMode === 'bacon-law') {
+      return
+    }
+
+    setIsLoading(true)
+    setErrorMessage(null)
+    setRoleVisibility({ ...DEFAULT_ROLE_VISIBILITY })
+
+    try {
+      if (searchMode === 'tv-film') {
+        const { selection, result } = await findRandomCommonCastMatch()
+        setLeftTitle(selection.left.title)
+        setRightTitle(selection.right.title)
+        setCommonCastResult(result)
+        setCommonTitlesResult(null)
+        setBaconLawResult(null)
+      } else {
+        const { selection, result } = await findRandomCommonTitlesMatch()
+        setLeftTitle(selection.left.name)
+        setRightTitle(selection.right.name)
+        setCommonTitlesResult(result)
+        setCommonCastResult(null)
+        setBaconLawResult(null)
+      }
+    } catch (error) {
+      setCommonCastResult(null)
+      setCommonTitlesResult(null)
+      setBaconLawResult(null)
+      const message = error instanceof Error ? error.message : 'Something went wrong while generating a random match.'
+      setErrorMessage(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const activeResultExists =
     searchMode === 'tv-film'
       ? commonCastResult !== null
@@ -195,7 +232,6 @@ function App() {
       <div className="ambient-glow ambient-right" />
       <main className="app-main">
         <header className="hero">
-          <p className="eyebrow">TMDB Cast Explorer</p>
           <h1>
             Cast<span className="hero-accent">Link</span>
           </h1>
@@ -257,9 +293,11 @@ function App() {
             rightPlaceholder={activeFormContent.rightPlaceholder}
             submitLabel={activeFormContent.submitLabel}
             submitLoadingLabel={activeFormContent.submitLoadingLabel}
+            secondaryActionLabel={searchMode === 'bacon-law' ? undefined : 'Random Match'}
             onLeftTitleChange={setLeftTitle}
             onRightTitleChange={setRightTitle}
             onSubmit={handleSubmit}
+            onSecondaryAction={searchMode === 'bacon-law' ? undefined : handleRandomMatch}
             showRightInput={activeFormContent.showRightInput}
           />
         </section>
