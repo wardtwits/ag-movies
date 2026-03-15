@@ -75,7 +75,6 @@ input:focus-visible,
 }
 
 .app-main {
-  flex: 1;
   width: min(100%, 78rem);
   margin: 0 auto;
   padding: 1rem 1rem 3rem;
@@ -85,7 +84,7 @@ input:focus-visible,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.75rem;
+  gap: 2.125rem;
   padding-top: 1rem;
 }
 
@@ -120,14 +119,14 @@ input:focus-visible,
   width: min(100%, 24rem);
   background: var(--color-surface-muted);
   border-radius: 999px;
-  padding: 0.25rem;
+  padding: 0.1875rem;
   overflow: hidden;
 }
 
 .mode-tab {
   position: relative;
   flex: 1;
-  min-height: 2.75rem;
+  min-height: 2.625rem;
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -155,6 +154,9 @@ input:focus-visible,
 .search-panel {
   width: min(100%, 54rem);
   margin: 1.5rem auto 0;
+  display: grid;
+  justify-items: center;
+  row-gap: 0;
 }
 
 .filter-toggle {
@@ -214,7 +216,8 @@ input:focus-visible,
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.875rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
+  width: 100%;
 }
 
 .search-row-plus {
@@ -233,17 +236,17 @@ input:focus-visible,
 .search-panel-actions {
   display: flex;
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 
 .random-match-button {
-  min-height: 2.75rem;
-  padding: 0.625rem 1.125rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-blue);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
   cursor: pointer;
@@ -266,7 +269,7 @@ input:focus-visible,
 
 .search-input-shell,
 .search-selected-shell {
-  min-height: 3.25rem;
+  min-height: 3.125rem;
   display: flex;
   align-items: center;
   gap: 0.875rem;
@@ -972,7 +975,7 @@ input:focus-visible,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 1.5rem 1rem 2rem;
+  padding: 1.125rem 1rem 1.5rem;
   color: #9aa0a6;
   font-size: 0.75rem;
 }
@@ -1005,6 +1008,7 @@ input:focus-visible,
 
   .app-main {
     padding-inline: 1.5rem;
+    padding-top: 4.5rem;
   }
 
   .search-row {
@@ -1033,7 +1037,11 @@ input:focus-visible,
 
 @media (min-width: 64rem) {
   .app-main {
-    padding-top: 2rem;
+    padding-top: 6.5rem;
+  }
+
+  .search-panel {
+    margin-top: 2.625rem;
   }
 
   .results-grid {
