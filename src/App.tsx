@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AboutDialog } from './components/AboutDialog'
 import { AppNav } from './components/AppNav'
 import { BaconPathSection } from './components/BaconPathSection'
-import { FilterToggle } from './components/FilterToggle'
 import { HeroHeader, type SearchMode } from './components/HeroHeader'
 import { HowItWorksDialog } from './components/HowItWorksDialog'
+import type { ResultCardData } from './components/ResultCard'
 import { ResultsSection, type ResultCardGroup } from './components/ResultsSection'
 import { SearchAutocompleteField } from './components/SearchAutocompleteField'
 import { TmdbFooter } from './components/TmdbFooter'
@@ -119,6 +119,7 @@ const formatMediaMeta = (mediaType: 'movie' | 'tv', releaseDate?: string): strin
 const mapSharedTitleToCard = (title: SharedTitle) => ({
   id: `${title.mediaType}-${title.id}`,
   title: title.title,
+  titleMeta: title.releaseDate?.slice(0, 4),
   subtitle: joinCharacterSummary(title.leftCharacter, title.rightCharacter)
     ? `As ${joinCharacterSummary(title.leftCharacter, title.rightCharacter)}`
     : formatMediaMeta(title.mediaType, title.releaseDate),
@@ -178,31 +179,27 @@ const pickHighlightedActorTitles = (
   const highlighted: Array<{ title: SharedTitle; metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent' }> = []
   const usedKeys = new Set<string>()
 
-  const pickNext = (
-    candidates: SharedTitle[],
-    metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent',
-    compare: (left: SharedTitle, right: SharedTitle) => number,
-  ) => {
-    const nextTitle = [...candidates].filter((title) => !usedKeys.has(getSharedTitleKey(title))).sort(compare)[0]
-    if (!nextTitle) {
+  const pickNext = (title: SharedTitle | undefined, metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent') => {
+    if (!title) {
       return
     }
 
-    usedKeys.add(getSharedTitleKey(nextTitle))
-    highlighted.push({ title: nextTitle, metaLabel })
+    usedKeys.add(getSharedTitleKey(title))
+    highlighted.push({ title, metaLabel })
   }
 
-  pickNext(titles, 'Most Popular', compareTitlesByPopularity)
-  pickNext(
-    titles.filter((title) => Boolean(title.releaseDate)),
-    'Earliest',
-    compareTitlesByEarliestRelease,
-  )
-  pickNext(
-    titles.filter((title) => Boolean(title.releaseDate)),
-    'Most Recent',
+  const earliestTitle = [...titles.filter((title) => Boolean(title.releaseDate))].sort(compareTitlesByEarliestRelease)[0]
+  pickNext(earliestTitle, 'Earliest')
+
+  const mostRecentTitle = [...titles.filter((title) => !usedKeys.has(getSharedTitleKey(title)) && Boolean(title.releaseDate))].sort(
     compareTitlesByMostRecentRelease,
-  )
+  )[0]
+  pickNext(mostRecentTitle, 'Most Recent')
+
+  const mostPopularTitle = [...titles].sort(compareTitlesByPopularity)[0]
+  if (mostPopularTitle && !usedKeys.has(getSharedTitleKey(mostPopularTitle))) {
+    pickNext(mostPopularTitle, 'Most Popular')
+  }
 
   return highlighted
 }
@@ -232,7 +229,7 @@ const compareExtraActorsForTitles = (left: SharedActor, right: SharedActor): num
   return left.name.localeCompare(right.name)
 }
 
-const buildResultGroups = (featuredCards: ReturnType<typeof mapSharedActorToCard>[], extraCards: ReturnType<typeof mapSharedActorToCard>[]): ResultCardGroup[] => {
+const buildResultGroups = (featuredCards: ResultCardData[], extraCards: ResultCardData[]): ResultCardGroup[] => {
   const groups: ResultCardGroup[] = []
 
   if (featuredCards.length) {
@@ -348,33 +345,27 @@ function App() {
     }
 
     if (displayedComparisonState.kind === 'actors') {
-      const highlightedTitles = pickHighlightedActorTitles(displayedComparisonState.result.sharedTitles)
-      const highlightedTitleKeys = new Set(highlightedTitles.map(({ title }) => getSharedTitleKey(title)))
-      const remainingTitles = displayedComparisonState.result.sharedTitles
-        .filter((title) => !highlightedTitleKeys.has(getSharedTitleKey(title)))
-        .sort(compareTitlesByPopularity)
-
-      const featuredTitles = remainingTitles.filter(
+      const sortedTitles = [...displayedComparisonState.result.sharedTitles].sort(compareTitlesByPopularity)
+      const featuredTitles = sortedTitles.filter(
         (title) => isStarBillingOrder(title.leftOrder) || isStarBillingOrder(title.rightOrder),
       )
-      const extraTitles = remainingTitles.filter(
+      const extraTitles = sortedTitles.filter(
         (title) => !isStarBillingOrder(title.leftOrder) && !isStarBillingOrder(title.rightOrder),
       )
+      const highlightedTitles = pickHighlightedActorTitles(featuredTitles)
+      const highlightedTitleKeys = new Set(highlightedTitles.map(({ title }) => getSharedTitleKey(title)))
+      const highlightedCards = highlightedTitles.map(({ title, metaLabel }) => ({
+        ...mapSharedTitleToCard(title),
+        metaLabel,
+      }))
+      const remainingFeaturedCards = featuredTitles
+        .filter((title) => !highlightedTitleKeys.has(getSharedTitleKey(title)))
+        .map(mapSharedTitleToCard)
 
-      return [
-        ...(highlightedTitles.length
-          ? [
-              {
-                id: 'highlights',
-                cards: highlightedTitles.map(({ title, metaLabel }) => ({
-                  ...mapSharedTitleToCard(title),
-                  metaLabel,
-                })),
-              },
-            ]
-          : []),
-        ...buildResultGroups(featuredTitles.map(mapSharedTitleToCard), extraTitles.map(mapSharedTitleToCard)),
-      ]
+      return buildResultGroups(
+        [...highlightedCards, ...remainingFeaturedCards],
+        extraTitles.map(mapSharedTitleToCard),
+      )
     }
 
     const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
@@ -727,18 +718,6 @@ function App() {
             ) : null}
           </div>
 
-          {shouldShowFilterToggle ? (
-            <div className="search-panel-filter-row">
-              <FilterToggle
-                checked={isFilteringVisibleOnly}
-                onChange={(checked) => {
-                  setFilterExtras(checked)
-                  setShowingHiddenExtras(false)
-                }}
-              />
-            </div>
-          ) : null}
-
           {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
             <div className="search-panel-actions">
               <button type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
@@ -763,6 +742,12 @@ function App() {
             }
             errorMessage={errorMessage}
             showingHiddenExtras={showingHiddenExtras}
+            showFilterToggle={shouldShowFilterToggle}
+            filterChecked={isFilteringVisibleOnly}
+            onFilterChange={(checked) => {
+              setFilterExtras(checked)
+              setShowingHiddenExtras(false)
+            }}
           />
         ) : null}
       </main>

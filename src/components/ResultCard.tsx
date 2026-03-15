@@ -3,6 +3,7 @@ const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
 export interface ResultCardData {
   id: string
   title: string
+  titleMeta?: string
   subtitle: string
   metaLabel?: string
   href: string
@@ -38,7 +39,10 @@ export const ResultCard = ({ card }: ResultCardProps) => {
         )}
       </div>
       <div className="result-card-copy">
-        <h3>{card.title}</h3>
+        <div className="result-card-title-row">
+          <h3>{card.title}</h3>
+          {card.titleMeta ? <span className="result-card-title-meta">{card.titleMeta}</span> : null}
+        </div>
         <p title={card.subtitle} aria-label={card.subtitle}>
           {card.subtitle}
         </p>

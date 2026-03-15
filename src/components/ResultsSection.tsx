@@ -1,3 +1,4 @@
+import { FilterToggle } from './FilterToggle'
 import { ResultCard, type ResultCardData } from './ResultCard'
 
 export interface ResultCardGroup {
@@ -14,6 +15,9 @@ interface ResultsSectionProps {
   emptyDescription: string
   errorMessage: string | null
   showingHiddenExtras: boolean
+  showFilterToggle: boolean
+  filterChecked: boolean
+  onFilterChange: (checked: boolean) => void
 }
 
 const LOADING_PLACEHOLDERS = Array.from({ length: 6 }, (_, index) => `skeleton-${index}`)
@@ -26,6 +30,9 @@ export const ResultsSection = ({
   emptyDescription,
   errorMessage,
   showingHiddenExtras,
+  showFilterToggle,
+  filterChecked,
+  onFilterChange,
 }: ResultsSectionProps) => {
   if (!hasSearched) {
     return null
@@ -37,6 +44,11 @@ export const ResultsSection = ({
         <h2>
           Results <span>({resultCount})</span>
         </h2>
+        {showFilterToggle ? (
+          <div className="results-filter-row">
+            <FilterToggle checked={filterChecked} onChange={onFilterChange} />
+          </div>
+        ) : null}
         {showingHiddenExtras ? (
           <div className="results-banner" role="status">
             0 direct matches. Showing Talk Shows/Cameo matches.
