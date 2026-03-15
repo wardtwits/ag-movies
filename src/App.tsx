@@ -44,6 +44,27 @@ const isPersonSelection = (selection: SearchSelection | null): selection is Pers
 
 const getSelectionLabel = (selection: SearchSelection): string => ('mediaType' in selection ? selection.title : selection.name)
 
+const getSelectionIdentity = (selection: SearchSelection): string =>
+  'mediaType' in selection ? `media:${selection.mediaType}:${selection.id}` : `person:${selection.id}`
+
+const getDuplicateSelectionMessage = (
+  mode: SearchMode,
+  primarySelection: SearchSelection | null,
+  secondarySelection: SearchSelection | null,
+): string | null => {
+  if (mode === 'bacon' || !primarySelection || !secondarySelection) {
+    return null
+  }
+
+  if (getSelectionIdentity(primarySelection) !== getSelectionIdentity(secondarySelection)) {
+    return null
+  }
+
+  return mode === 'actors'
+    ? 'Choose two different actors before searching.'
+    : 'Choose two different movies or shows before searching.'
+}
+
 const getActiveSearchKey = (
   mode: SearchMode,
   primarySelection: SearchSelection | null,
@@ -345,6 +366,18 @@ function App() {
       setIsLoading(false)
       setHasSearched(false)
       setErrorMessage(null)
+      setShowingHiddenExtras(false)
+      clearSearchResults()
+      return
+    }
+
+    const duplicateSelectionMessage = getDuplicateSelectionMessage(mode, primarySelection, secondarySelection)
+    if (duplicateSelectionMessage) {
+      searchRequestIdRef.current += 1
+      lastCompletedSearchKeyRef.current = null
+      setHasSearched(true)
+      setIsLoading(false)
+      setErrorMessage(duplicateSelectionMessage)
       setShowingHiddenExtras(false)
       clearSearchResults()
       return

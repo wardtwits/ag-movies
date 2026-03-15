@@ -239,6 +239,62 @@ const buildResult = (
   }
 }
 
+const findDirectConnection = (
+  actor: PersonWithCredits,
+  kevinBacon: PersonWithCredits,
+): BaconLawResult | null => {
+  const kevinCreditByKey = new Map<string, MediaCredit>()
+
+  for (const credit of kevinBacon.credits) {
+    kevinCreditByKey.set(mediaKey(credit), credit)
+  }
+
+  const sharedCredits = actor.credits
+    .map((credit) => {
+      const kevinCredit = kevinCreditByKey.get(mediaKey(credit))
+      if (!kevinCredit) {
+        return null
+      }
+
+      return {
+        actorCredit: credit,
+        kevinCredit,
+        score: scoreCredit(credit) + scoreCredit(kevinCredit),
+      }
+    })
+    .filter(
+      (
+        candidate,
+      ): candidate is {
+        actorCredit: MediaCredit
+        kevinCredit: MediaCredit
+        score: number
+      } => candidate !== null,
+    )
+    .sort((left, right) => right.score - left.score)
+
+  if (!sharedCredits.length) {
+    return null
+  }
+
+  const strongestSharedCredit = sharedCredits[0]
+
+  return {
+    actor,
+    kevinBacon,
+    degree: 1,
+    steps: [
+      {
+        fromActor: actor.person,
+        toActor: kevinBacon.person,
+        media: strongestSharedCredit.actorCredit,
+        fromCharacter: sanitizeCharacter(strongestSharedCredit.actorCredit.character),
+        toCharacter: sanitizeCharacter(strongestSharedCredit.kevinCredit.character),
+      },
+    ],
+  }
+}
+
 export const findBaconConnectionFromPerson = async (actorPerson: PersonSummary): Promise<BaconLawResult> => {
   const [actor, kevinBacon] = await Promise.all([loadPersonWithCredits(actorPerson), loadKevinBacon()])
 
@@ -249,6 +305,11 @@ export const findBaconConnectionFromPerson = async (actorPerson: PersonSummary):
       degree: 0,
       steps: [],
     }
+  }
+
+  const directConnection = findDirectConnection(actor, kevinBacon)
+  if (directConnection) {
+    return directConnection
   }
 
   const sourceVisited = new Map<number, VisitedActorEntry>([
