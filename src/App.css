@@ -156,7 +156,7 @@ input:focus-visible,
   margin: 1.5rem auto 0;
   display: grid;
   justify-items: center;
-  row-gap: 0;
+  row-gap: 0.875rem;
 }
 
 .search-panel-toolbar {
@@ -252,7 +252,7 @@ input:focus-visible,
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.875rem;
-  margin-top: 1.5rem;
+  margin-top: 0;
   width: 100%;
 }
 
@@ -689,9 +689,9 @@ input:focus-visible,
 
 .results-header-top {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .results-filter-row {
@@ -728,6 +728,7 @@ input:focus-visible,
   margin: 0;
   font-size: 1.375rem;
   font-weight: 500;
+  min-width: 0;
 }
 
 .results-header h2 span {
@@ -1028,13 +1029,6 @@ input:focus-visible,
 }
 
 @media (max-width: 47.99rem) {
-  .results-header-top {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
   .dialog-backdrop {
     padding: env(safe-area-inset-top) 0 0;
     align-items: stretch;
