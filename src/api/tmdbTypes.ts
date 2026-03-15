@@ -29,6 +29,14 @@ export interface TmdbPersonSearchResult {
   profile_path?: string | null
 }
 
+export interface TmdbPersonDetailsResponse {
+  id: number
+  name: string
+  known_for_department?: string
+  popularity?: number
+  profile_path?: string | null
+}
+
 export interface TmdbCreditsResponse {
   cast: TmdbCastMember[]
 }

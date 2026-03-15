@@ -71,11 +71,17 @@ export const BaconPathSection = ({ isLoading, errorMessage, result }: BaconPathS
 
       {result.steps.length ? (
         <div className="bacon-chain" role="list" aria-label="Kevin Bacon connection path">
-          <a href={tmdbPersonHref(result.actor.person.id)} target="_blank" rel="noopener noreferrer" className="bacon-chip bacon-chip-person" role="listitem">
+          <a
+            href={tmdbPersonHref(result.actor.person.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bacon-chip bacon-chip-person bacon-chip-endpoint"
+            role="listitem"
+          >
             {getProfileImageUrl(result.actor.person.profilePath) ? (
               <img src={getProfileImageUrl(result.actor.person.profilePath) ?? undefined} alt="" className="bacon-chip-avatar" />
             ) : null}
-            <span>{result.actor.person.name}</span>
+            <span className="bacon-chip-label">{result.actor.person.name}</span>
           </a>
 
           {result.steps.map((step, index) => (
@@ -94,16 +100,35 @@ export const BaconPathSection = ({ isLoading, errorMessage, result }: BaconPathS
               <span className="bacon-chain-arrow" aria-hidden="true">
                 →
               </span>
-              <a href={tmdbPersonHref(step.toActor.id)} target="_blank" rel="noopener noreferrer" className="bacon-chip bacon-chip-person">
+              <a
+                href={tmdbPersonHref(step.toActor.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`bacon-chip bacon-chip-person${index === result.steps.length - 1 ? ' bacon-chip-endpoint' : ''}`}
+              >
                 {getProfileImageUrl(step.toActor.profilePath) ? (
                   <img src={getProfileImageUrl(step.toActor.profilePath) ?? undefined} alt="" className="bacon-chip-avatar" />
                 ) : null}
-                <span>{step.toActor.name}</span>
+                <span className={index === result.steps.length - 1 ? 'bacon-chip-label' : undefined}>{step.toActor.name}</span>
               </a>
             </div>
           ))}
         </div>
-      ) : null}
+      ) : (
+        <div className="bacon-endpoint-only">
+          <a
+            href={tmdbPersonHref(result.actor.person.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bacon-chip bacon-chip-person bacon-chip-endpoint"
+          >
+            {getProfileImageUrl(result.actor.person.profilePath) ? (
+              <img src={getProfileImageUrl(result.actor.person.profilePath) ?? undefined} alt="" className="bacon-chip-avatar" />
+            ) : null}
+            <span className="bacon-chip-label">{result.actor.person.name}</span>
+          </a>
+        </div>
+      )}
     </section>
   )
 }

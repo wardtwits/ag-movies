@@ -1,4 +1,10 @@
-import { fetchCastForMedia, fetchCreditsForPerson, resolveActor, resolveActorToCredits } from '../../api/tmdbClient'
+import {
+  fetchCastForMedia,
+  fetchCreditsForPerson,
+  fetchPersonSummaryById,
+  resolveActor,
+  resolveActorToCredits,
+} from '../../api/tmdbClient'
 import type { CastMember, MediaCredit, PersonSummary, PersonWithCredits } from '../../domain/media'
 import type { BaconConnectionStep, BaconLawResult } from './types'
 
@@ -86,10 +92,17 @@ const selectCastForExpansion = (
 }
 
 const loadPersonWithCredits = async (person: PersonSummary): Promise<PersonWithCredits> =>
-  getOrSetCachedPromise(personCreditsCache, person.id, async () => ({
-    person,
-    credits: filterBaconCredits(await fetchCreditsForPerson(person.id)),
-  }))
+  getOrSetCachedPromise(personCreditsCache, person.id, async () => {
+    const [credits, enrichedPerson] = await Promise.all([
+      fetchCreditsForPerson(person.id),
+      person.profilePath ? Promise.resolve(person) : fetchPersonSummaryById(person.id).catch(() => person),
+    ])
+
+    return {
+      person: enrichedPerson,
+      credits: filterBaconCredits(credits),
+    }
+  })
 
 const loadKevinBacon = async (): Promise<PersonWithCredits> => {
   if (!kevinBaconPromise) {

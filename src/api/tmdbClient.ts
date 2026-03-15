@@ -15,6 +15,7 @@ import type {
   TmdbCreditsResponse,
   TmdbPersonCombinedCreditsResponse,
   TmdbPersonCredit,
+  TmdbPersonDetailsResponse,
   TmdbPersonSearchResponse,
   TmdbPersonSearchResult,
   TmdbSearchResponse,
@@ -79,6 +80,14 @@ const mapCastMember = (member: TmdbCastMember): CastMember => ({
 })
 
 const mapPersonSearchResult = (result: TmdbPersonSearchResult): PersonSummary => ({
+  id: result.id,
+  name: result.name,
+  knownForDepartment: result.known_for_department?.trim() || undefined,
+  popularity: result.popularity ?? 0,
+  profilePath: result.profile_path,
+})
+
+const mapPersonDetailsToSummary = (result: TmdbPersonDetailsResponse): PersonSummary => ({
   id: result.id,
   name: result.name,
   knownForDepartment: result.known_for_department?.trim() || undefined,
@@ -282,6 +291,14 @@ export const fetchPopularPeople = async (page = 1): Promise<PersonSummary[]> => 
   return response.results
     .map(mapPersonSearchResult)
     .sort((left, right) => right.popularity - left.popularity)
+}
+
+export const fetchPersonSummaryById = async (id: number): Promise<PersonSummary> => {
+  const response = await requestTmdb<TmdbPersonDetailsResponse>(`/person/${id}`, {
+    language: 'en-US',
+  })
+
+  return mapPersonDetailsToSummary(response)
 }
 
 export const resolveTitle = async (query: string, visibility: VisibilityMode = 'all'): Promise<MediaTitle> => {
