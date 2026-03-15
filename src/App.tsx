@@ -132,6 +132,21 @@ const mapSharedActorToCard = (actor: SharedActor) => ({
   imagePath: actor.profilePath,
 })
 
+const getBestBillingOrder = (actor: SharedActor): number => Math.min(actor.leftOrder, actor.rightOrder)
+
+const compareExtraActorsForTitles = (left: SharedActor, right: SharedActor): number => {
+  const billingDelta = getBestBillingOrder(left) - getBestBillingOrder(right)
+  if (billingDelta !== 0) {
+    return billingDelta
+  }
+
+  if (right.popularity !== left.popularity) {
+    return right.popularity - left.popularity
+  }
+
+  return left.name.localeCompare(right.name)
+}
+
 const buildResultGroups = (featuredCards: ReturnType<typeof mapSharedActorToCard>[], extraCards: ReturnType<typeof mapSharedActorToCard>[]): ResultCardGroup[] => {
   const groups: ResultCardGroup[] = []
 
@@ -258,7 +273,9 @@ function App() {
     }
 
     const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
-    const extraActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory === 'extra-both')
+    const extraActors = displayedComparisonState.result.sharedActors
+      .filter((actor) => actor.roleCategory === 'extra-both')
+      .sort(compareExtraActorsForTitles)
 
     return buildResultGroups(featuredActors.map(mapSharedActorToCard), extraActors.map(mapSharedActorToCard))
   }, [displayedComparisonState])
