@@ -4,7 +4,10 @@ const TALK_GENRE_ID = 10767
 
 const normalizeCharacter = (value?: string): string | undefined => value?.trim().toLowerCase()
 
-export const isSelfCharacter = (value?: string): boolean => normalizeCharacter(value) === 'self'
+export const isSelfCharacter = (value?: string): boolean => {
+  const normalized = normalizeCharacter(value)
+  return normalized ? normalized.includes('self') : false
+}
 
 export const isExcludedTvGenre = (media: Pick<MediaTitle, 'mediaType' | 'genreIds'>): boolean =>
   media.mediaType === 'tv' && media.genreIds.includes(TALK_GENRE_ID)

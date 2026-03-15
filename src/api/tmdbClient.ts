@@ -23,6 +23,8 @@ import type {
 
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 
+export type VisibilityMode = 'visible-only' | 'all'
+
 const normalizeText = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 const readBearerToken = (): string => {
@@ -34,6 +36,12 @@ const readBearerToken = (): string => {
 }
 
 const isMediaType = (value: string): value is MediaType => value === 'movie' || value === 'tv'
+
+const applyVisibilityFilter = <T>(
+  items: T[],
+  visibility: VisibilityMode,
+  predicate: (item: T) => boolean,
+): T[] => (visibility === 'all' ? items : items.filter(predicate))
 
 const mapSearchResultToMediaTitle = (result: TmdbSearchResult): MediaTitle | null => {
   if (!isMediaType(result.media_type)) {
@@ -128,7 +136,7 @@ const dedupeCastMembers = (members: CastMember[]): CastMember[] => {
       byId.set(member.id, member)
     }
   }
-  return Array.from(byId.values())
+  return [...byId.values()]
 }
 
 const dedupeMediaCredits = (credits: MediaCredit[]): MediaCredit[] => {
@@ -149,7 +157,7 @@ const dedupeMediaCredits = (credits: MediaCredit[]): MediaCredit[] => {
     }
   }
 
-  return Array.from(byMediaKey.values())
+  return [...byMediaKey.values()]
 }
 
 const requestTmdb = async <T>(
@@ -222,41 +230,56 @@ const pickBestPersonMatch = (query: string, results: PersonSummary[]): PersonSum
   return [...results].sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))[0]
 }
 
-export const searchMediaTitles = async (query: string, signal?: AbortSignal): Promise<MediaTitle[]> => {
-  const response = await requestTmdb<TmdbSearchResponse>('/search/multi', {
-    query,
-    language: 'en-US',
-    include_adult: false,
-    page: 1,
-  }, signal)
+export const searchMediaTitles = async (
+  query: string,
+  signal?: AbortSignal,
+  visibility: VisibilityMode = 'all',
+): Promise<MediaTitle[]> => {
+  const response = await requestTmdb<TmdbSearchResponse>(
+    '/search/multi',
+    {
+      query,
+      language: 'en-US',
+      include_adult: false,
+      page: 1,
+    },
+    signal,
+  )
 
-  return response.results
-    .map(mapSearchResultToMediaTitle)
-    .filter((candidate): candidate is MediaTitle => candidate !== null)
-    .filter(isVisibleMediaTitle)
-    .sort((left, right) => scoreMatch(right, query) - scoreMatch(left, query))
+  return applyVisibilityFilter(
+    response.results
+      .map(mapSearchResultToMediaTitle)
+      .filter((candidate): candidate is MediaTitle => candidate !== null)
+      .sort((left, right) => scoreMatch(right, query) - scoreMatch(left, query)),
+    visibility,
+    isVisibleMediaTitle,
+  )
 }
 
 export const searchPeople = async (query: string, signal?: AbortSignal): Promise<PersonSummary[]> => {
-  const response = await requestTmdb<TmdbPersonSearchResponse>('/search/person', {
-    query,
-    language: 'en-US',
-    include_adult: false,
-    page: 1,
-  }, signal)
+  const response = await requestTmdb<TmdbPersonSearchResponse>(
+    '/search/person',
+    {
+      query,
+      language: 'en-US',
+      include_adult: false,
+      page: 1,
+    },
+    signal,
+  )
 
   return response.results
     .map(mapPersonSearchResult)
     .sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))
 }
 
-export const resolveTitle = async (query: string): Promise<MediaTitle> => {
+export const resolveTitle = async (query: string, visibility: VisibilityMode = 'all'): Promise<MediaTitle> => {
   const cleanQuery = query.trim()
   if (!cleanQuery) {
     throw new Error('Please enter a movie or TV title.')
   }
 
-  const matches = await searchMediaTitles(cleanQuery)
+  const matches = await searchMediaTitles(cleanQuery, undefined, visibility)
   if (!matches.length) {
     throw new Error(`No movie or TV title was found for "${cleanQuery}".`)
   }
@@ -278,7 +301,19 @@ export const resolveActor = async (query: string): Promise<PersonSummary> => {
   return pickBestPersonMatch(cleanQuery, matches)
 }
 
-export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]> => {
+const sortCastMembers = (members: CastMember[]): CastMember[] => {
+  return [...members].sort((left, right) => {
+    if (left.order !== right.order) {
+      return left.order - right.order
+    }
+    return right.popularity - left.popularity
+  })
+}
+
+export const fetchCastForMedia = async (
+  media: MediaTitle,
+  visibility: VisibilityMode = 'visible-only',
+): Promise<CastMember[]> => {
   if (media.mediaType === 'tv') {
     try {
       const aggregateResponse = await requestTmdb<TmdbAggregateCreditsResponse>(
@@ -288,27 +323,25 @@ export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]
         },
       )
 
-      return dedupeCastMembers(aggregateResponse.cast.map(mapAggregateCastMember))
-        .filter(isVisibleCastMember)
-        .sort((left, right) => {
-        if (left.order !== right.order) {
-          return left.order - right.order
-        }
-        return right.popularity - left.popularity
-      })
+      return sortCastMembers(
+        applyVisibilityFilter(
+          dedupeCastMembers(aggregateResponse.cast.map(mapAggregateCastMember)),
+          visibility,
+          isVisibleCastMember,
+        ),
+      )
     } catch {
       const fallbackResponse = await requestTmdb<TmdbCreditsResponse>(`/tv/${media.id}/credits`, {
         language: 'en-US',
       })
 
-      return dedupeCastMembers(fallbackResponse.cast.map(mapCastMember))
-        .filter(isVisibleCastMember)
-        .sort((left, right) => {
-        if (left.order !== right.order) {
-          return left.order - right.order
-        }
-        return right.popularity - left.popularity
-      })
+      return sortCastMembers(
+        applyVisibilityFilter(
+          dedupeCastMembers(fallbackResponse.cast.map(mapCastMember)),
+          visibility,
+          isVisibleCastMember,
+        ),
+      )
     }
   }
 
@@ -316,27 +349,28 @@ export const fetchCastForMedia = async (media: MediaTitle): Promise<CastMember[]
     language: 'en-US',
   })
 
-  return dedupeCastMembers(movieCreditsResponse.cast.map(mapCastMember))
-    .filter(isVisibleCastMember)
-    .sort((left, right) => {
-    if (left.order !== right.order) {
-      return left.order - right.order
-    }
-    return right.popularity - left.popularity
-  })
+  return sortCastMembers(
+    applyVisibilityFilter(dedupeCastMembers(movieCreditsResponse.cast.map(mapCastMember)), visibility, isVisibleCastMember),
+  )
 }
 
-export const fetchCreditsForPerson = async (personId: number): Promise<MediaCredit[]> => {
+export const fetchCreditsForPerson = async (
+  personId: number,
+  visibility: VisibilityMode = 'visible-only',
+): Promise<MediaCredit[]> => {
   const response = await requestTmdb<TmdbPersonCombinedCreditsResponse>(`/person/${personId}/combined_credits`, {
     language: 'en-US',
   })
 
-  const mappedCredits = response.cast
-    .map(mapPersonCreditToMedia)
-    .filter((candidate): candidate is MediaCredit => candidate !== null)
-    .filter(isVisibleMediaCredit)
-
-  return dedupeMediaCredits(mappedCredits).sort((left, right) => {
+  return dedupeMediaCredits(
+    applyVisibilityFilter(
+      response.cast
+        .map(mapPersonCreditToMedia)
+        .filter((candidate): candidate is MediaCredit => candidate !== null),
+      visibility,
+      isVisibleMediaCredit,
+    ),
+  ).sort((left, right) => {
     if (right.popularity !== left.popularity) {
       return right.popularity - left.popularity
     }
@@ -347,9 +381,12 @@ export const fetchCreditsForPerson = async (personId: number): Promise<MediaCred
   })
 }
 
-export const resolveTitleToCast = async (query: string): Promise<MediaWithCast> => {
-  const selectedMedia = await resolveTitle(query)
-  const cast = await fetchCastForMedia(selectedMedia)
+export const resolveTitleToCast = async (
+  query: string,
+  visibility: VisibilityMode = 'visible-only',
+): Promise<MediaWithCast> => {
+  const selectedMedia = await resolveTitle(query, visibility)
+  const cast = await fetchCastForMedia(selectedMedia, visibility)
 
   return {
     media: selectedMedia,
@@ -357,9 +394,12 @@ export const resolveTitleToCast = async (query: string): Promise<MediaWithCast> 
   }
 }
 
-export const resolveActorToCredits = async (query: string): Promise<PersonWithCredits> => {
+export const resolveActorToCredits = async (
+  query: string,
+  visibility: VisibilityMode = 'visible-only',
+): Promise<PersonWithCredits> => {
   const selectedActor = await resolveActor(query)
-  const credits = await fetchCreditsForPerson(selectedActor.id)
+  const credits = await fetchCreditsForPerson(selectedActor.id, visibility)
 
   return {
     person: selectedActor,

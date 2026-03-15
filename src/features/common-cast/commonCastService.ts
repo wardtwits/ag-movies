@@ -1,11 +1,14 @@
+import type { VisibilityMode } from '../../api/tmdbClient'
 import { fetchCastForMedia, resolveTitleToCast } from '../../api/tmdbClient'
 import type { CastMember, MediaTitle, MediaWithCast } from '../../domain/media'
+import { isSelfCharacter } from '../../domain/mediaFilters'
 import type { CommonCastResult, SharedActor } from './types'
 
 const sanitizeCharacter = (value?: string): string | undefined => value?.trim() || undefined
 const STAR_BILLING_ORDER_THRESHOLD = 8
 
 const isStarBilling = (order: number): boolean => order <= STAR_BILLING_ORDER_THRESHOLD
+
 const resolveRoleCategory = (leftOrder: number, rightOrder: number): SharedActor['roleCategory'] => {
   const leftIsStar = isStarBilling(leftOrder)
   const rightIsStar = isStarBilling(rightOrder)
@@ -22,6 +25,7 @@ const resolveRoleCategory = (leftOrder: number, rightOrder: number): SharedActor
 const combineMember = (left: CastMember, right: CastMember): SharedActor => {
   const leftOrder = left.order
   const rightOrder = right.order
+
   return {
     id: left.id,
     name: left.name,
@@ -35,7 +39,7 @@ const combineMember = (left: CastMember, right: CastMember): SharedActor => {
   }
 }
 
-const buildCommonCastResult = (left: MediaWithCast, right: MediaWithCast): CommonCastResult => {
+export const buildCommonCastResult = (left: MediaWithCast, right: MediaWithCast): CommonCastResult => {
   const leftById = new Map<number, CastMember>(left.cast.map((member) => [member.id, member]))
   const sharedActors = right.cast
     .filter((member) => leftById.has(member.id))
@@ -54,8 +58,31 @@ const buildCommonCastResult = (left: MediaWithCast, right: MediaWithCast): Commo
   }
 }
 
-export const findCommonCastFromMedia = async (leftMedia: MediaTitle, rightMedia: MediaTitle): Promise<CommonCastResult> => {
-  const [leftCast, rightCast] = await Promise.all([fetchCastForMedia(leftMedia), fetchCastForMedia(rightMedia)])
+export const filterCommonCastResult = (
+  result: CommonCastResult,
+  visibility: VisibilityMode,
+): CommonCastResult => {
+  if (visibility === 'all') {
+    return result
+  }
+
+  return {
+    ...result,
+    sharedActors: result.sharedActors.filter(
+      (actor) => !isSelfCharacter(actor.leftCharacter) && !isSelfCharacter(actor.rightCharacter),
+    ),
+  }
+}
+
+export const findCommonCastFromMedia = async (
+  leftMedia: MediaTitle,
+  rightMedia: MediaTitle,
+  visibility: VisibilityMode = 'visible-only',
+): Promise<CommonCastResult> => {
+  const [leftCast, rightCast] = await Promise.all([
+    fetchCastForMedia(leftMedia, visibility),
+    fetchCastForMedia(rightMedia, visibility),
+  ])
 
   return buildCommonCastResult(
     { media: leftMedia, cast: leftCast },

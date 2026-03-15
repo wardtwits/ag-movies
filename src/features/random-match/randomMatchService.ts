@@ -30,7 +30,7 @@ export interface RandomCommonTitlesMatch {
 
 export const findRandomCommonCastMatch = async (): Promise<RandomCommonCastMatch> => {
   for (const selection of shuffled(RANDOM_TITLE_PAIRS)) {
-    const result = await findCommonCastFromMedia(selection.left, selection.right)
+    const result = await findCommonCastFromMedia(selection.left, selection.right, 'all')
     if (result.sharedActors.length > 0) {
       return { selection, result }
     }
@@ -41,7 +41,7 @@ export const findRandomCommonCastMatch = async (): Promise<RandomCommonCastMatch
 
 export const findRandomCommonTitlesMatch = async (): Promise<RandomCommonTitlesMatch> => {
   for (const selection of shuffled(RANDOM_ACTOR_PAIRS)) {
-    const result = await findCommonTitlesFromPeople(selection.left, selection.right)
+    const result = await findCommonTitlesFromPeople(selection.left, selection.right, 'all')
     if (result.sharedTitles.length > 0) {
       return { selection, result }
     }

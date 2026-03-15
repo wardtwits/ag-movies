@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CommonCastForm } from './components/CommonCastForm'
-import { ResultsGallery, type ResultGalleryCard } from './components/ResultsGallery'
+import { AboutDialog } from './components/AboutDialog'
+import { AppNav } from './components/AppNav'
+import { BaconPathSection } from './components/BaconPathSection'
+import { FilterToggle } from './components/FilterToggle'
+import { HeroHeader, type SearchMode } from './components/HeroHeader'
+import { HowItWorksDialog } from './components/HowItWorksDialog'
+import { ResultsSection } from './components/ResultsSection'
+import { SearchAutocompleteField } from './components/SearchAutocompleteField'
+import { TmdbFooter } from './components/TmdbFooter'
 import type { MediaTitle, PersonSummary } from './domain/media'
 import {
   AUTOCOMPLETE_MIN_QUERY_LENGTH,
@@ -10,15 +17,24 @@ import {
 } from './features/autocomplete/useAutocompleteSuggestions'
 import { findBaconConnectionFromPerson } from './features/bacon-law/baconLawService'
 import type { BaconLawResult } from './features/bacon-law/types'
-import { findCommonCastFromMedia } from './features/common-cast/commonCastService'
-import type { CommonCastResult, SharedActorRoleCategory } from './features/common-cast/types'
-import { findCommonTitlesFromPeople } from './features/common-titles/commonTitlesService'
-import type { CommonTitlesResult } from './features/common-titles/types'
+import {
+  filterCommonCastResult,
+  findCommonCastFromMedia,
+} from './features/common-cast/commonCastService'
+import type { CommonCastResult, SharedActor } from './features/common-cast/types'
+import {
+  filterCommonTitlesResult,
+  findCommonTitlesFromPeople,
+} from './features/common-titles/commonTitlesService'
+import type { CommonTitlesResult, SharedTitle } from './features/common-titles/types'
 import { findRandomCommonCastMatch, findRandomCommonTitlesMatch } from './features/random-match/randomMatchService'
 import './App.css'
 
-type SearchMode = 'tv-film' | 'actor' | 'bacon-law'
 type SearchSelection = MediaTitle | PersonSummary
+
+type ComparisonSearchState =
+  | { kind: 'actors'; result: CommonTitlesResult }
+  | { kind: 'titles'; result: CommonCastResult }
 
 const isMediaSelection = (selection: SearchSelection | null): selection is MediaTitle =>
   selection !== null && 'mediaType' in selection
@@ -28,239 +44,295 @@ const isPersonSelection = (selection: SearchSelection | null): selection is Pers
 
 const getSelectionLabel = (selection: SearchSelection): string => ('mediaType' in selection ? selection.title : selection.name)
 
-const getMediaMeta = (mediaType: 'movie' | 'tv', releaseDate?: string): string => {
-  const kindLabel = mediaType === 'movie' ? 'Movie' : 'TV'
-  const releaseYear = releaseDate?.slice(0, 4)
-  return releaseYear ? `${kindLabel} • ${releaseYear}` : kindLabel
-}
-
-const getRoleSummary = (leftCharacter?: string, rightCharacter?: string): string => {
-  if (leftCharacter && rightCharacter) {
-    return `${leftCharacter} / ${rightCharacter}`
-  }
-  if (leftCharacter || rightCharacter) {
-    return `As ${leftCharacter ?? rightCharacter}`
-  }
-  return 'Shared cast'
-}
-
-const getRoleCategoryLabel = (category: SharedActorRoleCategory): string => {
-  switch (category) {
-    case 'star-both':
-      return 'Star on both'
-    case 'mixed':
-      return 'Star on one only'
-    case 'extra-both':
-      return 'Extra/supporting on both'
-  }
-}
-
-const getAutoSearchKey = (
+const getActiveSearchKey = (
   mode: SearchMode,
-  leftSelection: SearchSelection | null,
-  rightSelection: SearchSelection | null,
+  primarySelection: SearchSelection | null,
+  secondarySelection: SearchSelection | null,
 ): string | null => {
-  if (mode === 'tv-film' && isMediaSelection(leftSelection) && isMediaSelection(rightSelection)) {
-    return `tv-film:${leftSelection.id}:${rightSelection.id}`
+  if (mode === 'actors' && isPersonSelection(primarySelection) && isPersonSelection(secondarySelection)) {
+    return `actors:${primarySelection.id}:${secondarySelection.id}`
   }
 
-  if (mode === 'actor' && isPersonSelection(leftSelection) && isPersonSelection(rightSelection)) {
-    return `actor:${leftSelection.id}:${rightSelection.id}`
+  if (mode === 'titles' && isMediaSelection(primarySelection) && isMediaSelection(secondarySelection)) {
+    return `titles:${primarySelection.id}:${secondarySelection.id}`
   }
 
-  if (mode === 'bacon-law' && isPersonSelection(leftSelection)) {
-    return `bacon-law:${leftSelection.id}`
+  if (mode === 'bacon' && isPersonSelection(primarySelection)) {
+    return `bacon:${primarySelection.id}`
   }
 
   return null
 }
 
-const buildBaconCards = (result: BaconLawResult): ResultGalleryCard[] => {
-  if (!result.steps.length) {
-    return [
-      {
-        id: `actor-${result.actor.person.id}`,
-        title: result.actor.person.name,
-        subtitle: 'Kevin Bacon',
-        detail: 'Degree 0',
-        imagePath: result.actor.person.profilePath,
-        visual: 'featured',
-      },
-    ]
+const getComparisonResultCount = (state: ComparisonSearchState | null): number => {
+  if (!state) {
+    return 0
   }
 
-  const cards: ResultGalleryCard[] = [
-    {
-      id: `actor-${result.actor.person.id}`,
-      title: result.actor.person.name,
-      subtitle: result.steps[0].fromCharacter ? `As ${result.steps[0].fromCharacter}` : 'Selected actor',
-      detail: 'Start',
-      imagePath: result.actor.person.profilePath,
-      visual: 'person',
-    },
-  ]
+  return state.kind === 'actors' ? state.result.sharedTitles.length : state.result.sharedActors.length
+}
 
-  result.steps.forEach((step, index) => {
-    cards.push({
-      id: `media-${index}-${step.media.mediaType}-${step.media.id}`,
-      title: step.media.title,
-      subtitle: getMediaMeta(step.media.mediaType, step.media.releaseDate),
-      detail: `${step.fromActor.name} to ${step.toActor.name}`,
-      imagePath: step.media.posterPath,
-      visual: step.media.mediaType,
-    })
+const tmdbPersonHref = (id: number): string => `https://www.themoviedb.org/person/${id}`
+const tmdbMediaHref = (mediaType: 'movie' | 'tv', id: number): string =>
+  `https://www.themoviedb.org/${mediaType === 'tv' ? 'tv' : 'movie'}/${id}`
 
-    const isKevinBacon = step.toActor.id === result.kevinBacon.person.id
-    cards.push({
-      id: `actor-${index}-${step.toActor.id}`,
-      title: step.toActor.name,
-      subtitle: step.toCharacter ? `As ${step.toCharacter}` : isKevinBacon ? 'Kevin Bacon' : 'Bridge actor',
-      detail: isKevinBacon ? `Degree ${result.degree}` : undefined,
-      imagePath: step.toActor.profilePath,
-      visual: isKevinBacon ? 'featured' : 'person',
-    })
-  })
+const joinCharacterSummary = (...characters: Array<string | undefined>): string | null => {
+  const values = characters.filter(Boolean) as string[]
+  if (!values.length) {
+    return null
+  }
+  return values.join(' / ')
+}
 
-  return cards
+const formatMediaMeta = (mediaType: 'movie' | 'tv', releaseDate?: string): string => {
+  const typeLabel = mediaType === 'tv' ? 'TV Show' : 'Movie'
+  const year = releaseDate?.slice(0, 4)
+  return year ? `${typeLabel} • ${year}` : typeLabel
+}
+
+const mapSharedTitleToCard = (title: SharedTitle) => ({
+  id: `${title.mediaType}-${title.id}`,
+  title: title.title,
+  subtitle: joinCharacterSummary(title.leftCharacter, title.rightCharacter)
+    ? `As ${joinCharacterSummary(title.leftCharacter, title.rightCharacter)}`
+    : formatMediaMeta(title.mediaType, title.releaseDate),
+  href: tmdbMediaHref(title.mediaType, title.id),
+  imagePath: title.posterPath,
+})
+
+const mapSharedActorToCard = (actor: SharedActor) => ({
+  id: `person-${actor.id}`,
+  title: actor.name,
+  subtitle: joinCharacterSummary(actor.leftCharacter, actor.rightCharacter)
+    ? `Role: ${joinCharacterSummary(actor.leftCharacter, actor.rightCharacter)}`
+    : 'Actor',
+  href: tmdbPersonHref(actor.id),
+  imagePath: actor.profilePath,
+})
+
+const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
+  actors: 'Search first actor...',
+  titles: 'Search first movie or show...',
+  bacon: 'Search an actor…',
+}
+
+const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
+  actors: 'Search second actor...',
+  titles: 'Search second movie or show...',
 }
 
 function App() {
-  const [searchMode, setSearchMode] = useState<SearchMode>('tv-film')
-  const [leftTitle, setLeftTitle] = useState('')
-  const [rightTitle, setRightTitle] = useState('')
-  const [leftSelection, setLeftSelection] = useState<SearchSelection | null>(null)
-  const [rightSelection, setRightSelection] = useState<SearchSelection | null>(null)
+  const [mode, setMode] = useState<SearchMode>('actors')
+  const [primaryQuery, setPrimaryQuery] = useState('')
+  const [secondaryQuery, setSecondaryQuery] = useState('')
+  const [primarySelection, setPrimarySelection] = useState<SearchSelection | null>(null)
+  const [secondarySelection, setSecondarySelection] = useState<SearchSelection | null>(null)
+  const [filterExtras, setFilterExtras] = useState(true)
+  const [showingHiddenExtras, setShowingHiddenExtras] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [commonCastResult, setCommonCastResult] = useState<CommonCastResult | null>(null)
-  const [commonTitlesResult, setCommonTitlesResult] = useState<CommonTitlesResult | null>(null)
-  const [baconLawResult, setBaconLawResult] = useState<BaconLawResult | null>(null)
+  const [comparisonState, setComparisonState] = useState<ComparisonSearchState | null>(null)
+  const [baconResult, setBaconResult] = useState<BaconLawResult | null>(null)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const searchRequestIdRef = useRef(0)
   const lastCompletedSearchKeyRef = useRef<string | null>(null)
 
-  const leftMediaAutocomplete = useAutocompleteSuggestions(leftTitle, {
-    enabled: searchMode === 'tv-film',
+  const primaryMediaAutocomplete = useAutocompleteSuggestions(primaryQuery, {
+    enabled: mode === 'titles',
     loader: fetchMediaSuggestions,
   })
-  const rightMediaAutocomplete = useAutocompleteSuggestions(rightTitle, {
-    enabled: searchMode === 'tv-film',
+  const secondaryMediaAutocomplete = useAutocompleteSuggestions(secondaryQuery, {
+    enabled: mode === 'titles',
     loader: fetchMediaSuggestions,
   })
-  const leftPersonAutocomplete = useAutocompleteSuggestions(leftTitle, {
-    enabled: searchMode !== 'tv-film',
+  const primaryPersonAutocomplete = useAutocompleteSuggestions(primaryQuery, {
+    enabled: mode !== 'titles',
     loader: fetchPersonSuggestions,
   })
-  const rightPersonAutocomplete = useAutocompleteSuggestions(rightTitle, {
-    enabled: searchMode === 'actor',
+  const secondaryPersonAutocomplete = useAutocompleteSuggestions(secondaryQuery, {
+    enabled: mode === 'actors',
     loader: fetchPersonSuggestions,
   })
 
   const activeSearchKey = useMemo(
-    () => getAutoSearchKey(searchMode, leftSelection, rightSelection),
-    [leftSelection, rightSelection, searchMode],
+    () => getActiveSearchKey(mode, primarySelection, secondarySelection),
+    [mode, primarySelection, secondarySelection],
   )
 
-  const clearResults = () => {
-    setCommonCastResult(null)
-    setCommonTitlesResult(null)
-    setBaconLawResult(null)
-  }
+  const filteredComparisonState = useMemo<ComparisonSearchState | null>(() => {
+    if (!comparisonState) {
+      return null
+    }
 
-  const handleSearchModeChange = (mode: SearchMode) => {
-    if (mode === searchMode) {
+    if (comparisonState.kind === 'actors') {
+      return {
+        kind: 'actors',
+        result: filterCommonTitlesResult(comparisonState.result, 'visible-only'),
+      }
+    }
+
+    return {
+      kind: 'titles',
+      result: filterCommonCastResult(comparisonState.result, 'visible-only'),
+    }
+  }, [comparisonState])
+
+  const displayedComparisonState = useMemo<ComparisonSearchState | null>(() => {
+    if (!comparisonState) {
+      return null
+    }
+
+    return filterExtras ? filteredComparisonState : comparisonState
+  }, [comparisonState, filterExtras, filteredComparisonState])
+
+  const resultCards = useMemo(() => {
+    if (!displayedComparisonState) {
+      return []
+    }
+
+    return displayedComparisonState.kind === 'actors'
+      ? displayedComparisonState.result.sharedTitles.map(mapSharedTitleToCard)
+      : displayedComparisonState.result.sharedActors.map(mapSharedActorToCard)
+  }, [displayedComparisonState])
+
+  const resultCount = getComparisonResultCount(displayedComparisonState)
+
+  useEffect(() => {
+    if (mode === 'bacon' || !comparisonState || !filterExtras) {
       return
     }
 
+    const allCount = getComparisonResultCount(comparisonState)
+    const filteredCount = getComparisonResultCount(filteredComparisonState)
+    if (allCount > 0 && filteredCount === 0) {
+      setFilterExtras(false)
+      setShowingHiddenExtras(true)
+    }
+  }, [comparisonState, filteredComparisonState, filterExtras, mode])
+
+  const clearSearchResults = () => {
+    setComparisonState(null)
+    setBaconResult(null)
+  }
+
+  const resetSelectionsAndResults = () => {
     searchRequestIdRef.current += 1
     lastCompletedSearchKeyRef.current = null
-    setSearchMode(mode)
-    setLeftTitle('')
-    setRightTitle('')
-    setLeftSelection(null)
-    setRightSelection(null)
-    setErrorMessage(null)
+    setPrimaryQuery('')
+    setSecondaryQuery('')
+    setPrimarySelection(null)
+    setSecondarySelection(null)
+    setHasSearched(false)
     setIsLoading(false)
-    clearResults()
+    setErrorMessage(null)
+    setShowingHiddenExtras(false)
+    clearSearchResults()
   }
 
-  const handleLeftInputChange = (value: string) => {
-    setLeftTitle(value)
+  const handleModeChange = (nextMode: SearchMode) => {
+    if (nextMode === mode) {
+      return
+    }
+
+    setMode(nextMode)
+    resetSelectionsAndResults()
+  }
+
+  const handlePrimaryInputChange = (value: string) => {
+    setPrimaryQuery(value)
     setErrorMessage(null)
-    if (leftSelection && getSelectionLabel(leftSelection) !== value) {
-      setLeftSelection(null)
+    setShowingHiddenExtras(false)
+    if (primarySelection && getSelectionLabel(primarySelection) !== value) {
+      setPrimarySelection(null)
     }
   }
 
-  const handleRightInputChange = (value: string) => {
-    setRightTitle(value)
+  const handleSecondaryInputChange = (value: string) => {
+    setSecondaryQuery(value)
     setErrorMessage(null)
-    if (rightSelection && getSelectionLabel(rightSelection) !== value) {
-      setRightSelection(null)
+    setShowingHiddenExtras(false)
+    if (secondarySelection && getSelectionLabel(secondarySelection) !== value) {
+      setSecondarySelection(null)
     }
   }
 
-  const handleLeftSelection = (selection: SearchSelection) => {
-    setLeftSelection(selection)
-    setLeftTitle(getSelectionLabel(selection))
+  const handlePrimarySelect = (selection: SearchSelection) => {
+    setPrimarySelection(selection)
+    setPrimaryQuery(getSelectionLabel(selection))
     setErrorMessage(null)
   }
 
-  const handleRightSelection = (selection: SearchSelection) => {
-    setRightSelection(selection)
-    setRightTitle(getSelectionLabel(selection))
+  const handleSecondarySelect = (selection: SearchSelection) => {
+    setSecondarySelection(selection)
+    setSecondaryQuery(getSelectionLabel(selection))
     setErrorMessage(null)
   }
 
-  const clearLeftSelection = () => {
-    setLeftSelection(null)
-    setLeftTitle('')
+  const clearPrimarySelection = () => {
+    setPrimarySelection(null)
+    setPrimaryQuery('')
     setErrorMessage(null)
+    setShowingHiddenExtras(false)
   }
 
-  const clearRightSelection = () => {
-    setRightSelection(null)
-    setRightTitle('')
+  const clearSecondarySelection = () => {
+    setSecondarySelection(null)
+    setSecondaryQuery('')
     setErrorMessage(null)
+    setShowingHiddenExtras(false)
   }
 
   const handleRandomMatch = async () => {
-    if (searchMode === 'bacon-law') {
+    if (mode === 'bacon') {
       return
     }
 
-    searchRequestIdRef.current += 1
+    const requestId = searchRequestIdRef.current + 1
+    searchRequestIdRef.current = requestId
+    setHasSearched(true)
     setIsLoading(true)
     setErrorMessage(null)
+    setShowingHiddenExtras(false)
+    clearSearchResults()
 
     try {
-      if (searchMode === 'tv-film') {
+      if (mode === 'titles') {
         const { selection, result } = await findRandomCommonCastMatch()
-        lastCompletedSearchKeyRef.current = getAutoSearchKey('tv-film', selection.left, selection.right)
-        setLeftTitle(selection.left.title)
-        setRightTitle(selection.right.title)
-        setLeftSelection(selection.left)
-        setRightSelection(selection.right)
-        setCommonCastResult(result)
-        setCommonTitlesResult(null)
-        setBaconLawResult(null)
+        if (searchRequestIdRef.current !== requestId) {
+          return
+        }
+
+        setPrimarySelection(selection.left)
+        setSecondarySelection(selection.right)
+        setPrimaryQuery(selection.left.title)
+        setSecondaryQuery(selection.right.title)
+        setComparisonState({ kind: 'titles', result })
+        lastCompletedSearchKeyRef.current = getActiveSearchKey('titles', selection.left, selection.right)
       } else {
         const { selection, result } = await findRandomCommonTitlesMatch()
-        lastCompletedSearchKeyRef.current = getAutoSearchKey('actor', selection.left, selection.right)
-        setLeftTitle(selection.left.name)
-        setRightTitle(selection.right.name)
-        setLeftSelection(selection.left)
-        setRightSelection(selection.right)
-        setCommonTitlesResult(result)
-        setCommonCastResult(null)
-        setBaconLawResult(null)
+        if (searchRequestIdRef.current !== requestId) {
+          return
+        }
+
+        setPrimarySelection(selection.left)
+        setSecondarySelection(selection.right)
+        setPrimaryQuery(selection.left.name)
+        setSecondaryQuery(selection.right.name)
+        setComparisonState({ kind: 'actors', result })
+        lastCompletedSearchKeyRef.current = getActiveSearchKey('actors', selection.left, selection.right)
       }
     } catch (error) {
+      if (searchRequestIdRef.current !== requestId) {
+        return
+      }
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to create a random match.')
       lastCompletedSearchKeyRef.current = null
-      clearResults()
-      const message = error instanceof Error ? error.message : 'Something went wrong while generating a random match.'
-      setErrorMessage(message)
     } finally {
-      setIsLoading(false)
+      if (searchRequestIdRef.current === requestId) {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -269,8 +341,10 @@ function App() {
       searchRequestIdRef.current += 1
       lastCompletedSearchKeyRef.current = null
       setIsLoading(false)
+      setHasSearched(false)
       setErrorMessage(null)
-      clearResults()
+      setShowingHiddenExtras(false)
+      clearSearchResults()
       return
     }
 
@@ -280,29 +354,31 @@ function App() {
 
     const requestId = searchRequestIdRef.current + 1
     searchRequestIdRef.current = requestId
+    setHasSearched(true)
     setIsLoading(true)
     setErrorMessage(null)
-    clearResults()
+    setShowingHiddenExtras(false)
+    clearSearchResults()
 
     const runSearch = async () => {
-      if (searchMode === 'tv-film' && isMediaSelection(leftSelection) && isMediaSelection(rightSelection)) {
-        const result = await findCommonCastFromMedia(leftSelection, rightSelection)
+      if (mode === 'actors' && isPersonSelection(primarySelection) && isPersonSelection(secondarySelection)) {
+        const result = await findCommonTitlesFromPeople(primarySelection, secondarySelection, 'all')
         if (searchRequestIdRef.current !== requestId) {
           return
         }
-        setCommonCastResult(result)
-      } else if (searchMode === 'actor' && isPersonSelection(leftSelection) && isPersonSelection(rightSelection)) {
-        const result = await findCommonTitlesFromPeople(leftSelection, rightSelection)
+        setComparisonState({ kind: 'actors', result })
+      } else if (mode === 'titles' && isMediaSelection(primarySelection) && isMediaSelection(secondarySelection)) {
+        const result = await findCommonCastFromMedia(primarySelection, secondarySelection, 'all')
         if (searchRequestIdRef.current !== requestId) {
           return
         }
-        setCommonTitlesResult(result)
-      } else if (searchMode === 'bacon-law' && isPersonSelection(leftSelection)) {
-        const result = await findBaconConnectionFromPerson(leftSelection)
+        setComparisonState({ kind: 'titles', result })
+      } else if (mode === 'bacon' && isPersonSelection(primarySelection)) {
+        const result = await findBaconConnectionFromPerson(primarySelection)
         if (searchRequestIdRef.current !== requestId) {
           return
         }
-        setBaconLawResult(result)
+        setBaconResult(result)
       } else {
         return
       }
@@ -315,238 +391,134 @@ function App() {
       if (searchRequestIdRef.current !== requestId) {
         return
       }
+
       lastCompletedSearchKeyRef.current = null
-      clearResults()
-      const message = error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.'
-      setErrorMessage(message)
+      clearSearchResults()
+      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.')
       setIsLoading(false)
     })
-  }, [activeSearchKey, leftSelection, rightSelection, searchMode])
+  }, [activeSearchKey, mode, primarySelection, secondarySelection])
 
-  const resultsView = useMemo(() => {
-    if (searchMode === 'tv-film' && commonCastResult) {
-      return {
-        heading: `Results (${commonCastResult.sharedActors.length})`,
-        context: `Shared cast between ${commonCastResult.left.media.title} and ${commonCastResult.right.media.title}`,
-        emptyMessage: 'No overlapping actors were found for this pair.',
-        cards: commonCastResult.sharedActors.map<ResultGalleryCard>((actor) => ({
-          id: `actor-${actor.id}`,
-          title: actor.name,
-          subtitle: getRoleSummary(actor.leftCharacter, actor.rightCharacter),
-          detail: getRoleCategoryLabel(actor.roleCategory),
-          imagePath: actor.profilePath,
-          visual: 'person',
-        })),
-      }
-    }
-
-    if (searchMode === 'actor' && commonTitlesResult) {
-      return {
-        heading: `Results (${commonTitlesResult.sharedTitles.length})`,
-        context: `Shared titles between ${commonTitlesResult.left.person.name} and ${commonTitlesResult.right.person.name}`,
-        emptyMessage: 'No overlapping TV/film titles were found for this pair.',
-        cards: commonTitlesResult.sharedTitles.map<ResultGalleryCard>((title) => {
-          const subtitle = title.leftCharacter || title.rightCharacter
-            ? getRoleSummary(title.leftCharacter, title.rightCharacter)
-            : getMediaMeta(title.mediaType, title.releaseDate)
-
-          return {
-            id: `${title.mediaType}-${title.id}`,
-            title: title.title,
-            subtitle,
-            detail:
-              title.leftCharacter || title.rightCharacter
-                ? getMediaMeta(title.mediaType, title.releaseDate)
-                : undefined,
-            imagePath: title.posterPath,
-            visual: title.mediaType,
-          }
-        }),
-      }
-    }
-
-    if (searchMode === 'bacon-law' && baconLawResult) {
-      return {
-        heading: `Bacon Number ${baconLawResult.degree}`,
-        context:
-          baconLawResult.degree === 0
-            ? `${baconLawResult.actor.person.name} is Kevin Bacon.`
-            : `Shortest path from ${baconLawResult.actor.person.name} to Kevin Bacon`,
-        emptyMessage: 'No Bacon path was found.',
-        cards: buildBaconCards(baconLawResult),
-      }
-    }
-
-    return null
-  }, [baconLawResult, commonCastResult, commonTitlesResult, searchMode])
-
-  const loadingMessage =
-    searchMode === 'tv-film'
-      ? 'Resolving titles and matching casts...'
-      : searchMode === 'actor'
-        ? 'Resolving actors and matching titles...'
-        : 'Searching for the shortest Kevin Bacon connection...'
-
-  const leftAutocomplete =
-    searchMode === 'tv-film'
+  const primaryFieldConfig =
+    mode === 'titles'
       ? {
-          suggestions: leftMediaAutocomplete.suggestions,
-          selectedEntity: isMediaSelection(leftSelection) ? leftSelection : null,
-          isLoading: leftMediaAutocomplete.isLoading,
-          minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
-          hasSearched: leftMediaAutocomplete.hasSearched,
+          suggestions: primaryMediaAutocomplete.suggestions,
+          selectedEntity: isMediaSelection(primarySelection) ? primarySelection : null,
+          isLoading: primaryMediaAutocomplete.isLoading,
+          hasSearched: primaryMediaAutocomplete.hasSearched,
           inputKind: 'media' as const,
-          onSelect: handleLeftSelection,
-          onClearSelection: clearLeftSelection,
         }
       : {
-          suggestions: leftPersonAutocomplete.suggestions,
-          selectedEntity: isPersonSelection(leftSelection) ? leftSelection : null,
-          isLoading: leftPersonAutocomplete.isLoading,
-          minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
-          hasSearched: leftPersonAutocomplete.hasSearched,
+          suggestions: primaryPersonAutocomplete.suggestions,
+          selectedEntity: isPersonSelection(primarySelection) ? primarySelection : null,
+          isLoading: primaryPersonAutocomplete.isLoading,
+          hasSearched: primaryPersonAutocomplete.hasSearched,
           inputKind: 'person' as const,
-          onSelect: handleLeftSelection,
-          onClearSelection: clearLeftSelection,
         }
 
-  const rightAutocomplete =
-    searchMode === 'tv-film'
+  const secondaryFieldConfig =
+    mode === 'titles'
       ? {
-          suggestions: rightMediaAutocomplete.suggestions,
-          selectedEntity: isMediaSelection(rightSelection) ? rightSelection : null,
-          isLoading: rightMediaAutocomplete.isLoading,
-          minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
-          hasSearched: rightMediaAutocomplete.hasSearched,
+          suggestions: secondaryMediaAutocomplete.suggestions,
+          selectedEntity: isMediaSelection(secondarySelection) ? secondarySelection : null,
+          isLoading: secondaryMediaAutocomplete.isLoading,
+          hasSearched: secondaryMediaAutocomplete.hasSearched,
           inputKind: 'media' as const,
-          onSelect: handleRightSelection,
-          onClearSelection: clearRightSelection,
         }
-      : searchMode === 'actor'
-        ? {
-            suggestions: rightPersonAutocomplete.suggestions,
-            selectedEntity: isPersonSelection(rightSelection) ? rightSelection : null,
-            isLoading: rightPersonAutocomplete.isLoading,
-            minimumQueryLength: AUTOCOMPLETE_MIN_QUERY_LENGTH,
-            hasSearched: rightPersonAutocomplete.hasSearched,
-            inputKind: 'person' as const,
-            onSelect: handleRightSelection,
-            onClearSelection: clearRightSelection,
-          }
-        : undefined
-
-  const activeFormContent =
-    searchMode === 'tv-film'
-      ? {
-          leftLabel: 'Movie / TV title 1',
-          rightLabel: 'Movie / TV title 2',
-          leftPlaceholder: 'Example: The Matrix',
-          rightPlaceholder: 'Example: John Wick',
-          showRightInput: true,
+      : {
+          suggestions: secondaryPersonAutocomplete.suggestions,
+          selectedEntity: isPersonSelection(secondarySelection) ? secondarySelection : null,
+          isLoading: secondaryPersonAutocomplete.isLoading,
+          hasSearched: secondaryPersonAutocomplete.hasSearched,
+          inputKind: 'person' as const,
         }
-      : searchMode === 'actor'
-        ? {
-            leftLabel: 'Actor 1',
-            rightLabel: 'Actor 2',
-            leftPlaceholder: 'Example: Kelsey Grammer',
-            rightPlaceholder: 'Example: Peri Gilpin',
-            showRightInput: true,
-          }
-        : {
-            leftLabel: 'Actor',
-            rightLabel: '',
-            leftPlaceholder: 'Example: Carrie Fisher',
-            rightPlaceholder: '',
-            showRightInput: false,
-          }
 
   return (
-    <div className={`app-shell app-shell-${searchMode}`}>
-      <div className="ambient-glow ambient-left" />
-      <div className="ambient-glow ambient-right" />
+    <div className="app-shell">
+      <AppNav onAboutOpen={() => setAboutOpen(true)} onHowItWorksOpen={() => setHowItWorksOpen(true)} />
+
       <main className="app-main">
-        <header className="hero">
-          <h1>
-            Cast<span className="hero-accent">Link</span>
-          </h1>
-          <p className="hero-copy">
-            Uncover every shared cinematic moment between your favorite stars. Compare titles, compare actors, or trace
-            a Bacon number back to Kevin Bacon.
-          </p>
-        </header>
+        <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
-        <section className="panel">
-          <div className="search-mode" role="radiogroup" aria-label="Search mode">
-            <span className="search-mode-text">Search by</span>
-            <label className={`search-mode-option${searchMode === 'actor' ? ' search-mode-option-active' : ''}`}>
-              <span>Actor</span>
-              <input
-                type="radio"
-                name="search-mode"
-                value="actor"
-                checked={searchMode === 'actor'}
-                onChange={() => handleSearchModeChange('actor')}
+        <section className="search-panel">
+          {mode !== 'bacon' ? (
+            <FilterToggle
+              checked={filterExtras}
+              onChange={(checked) => {
+                setFilterExtras(checked)
+                setShowingHiddenExtras(false)
+              }}
+            />
+          ) : null}
+
+          <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
+            <SearchAutocompleteField
+              label={mode === 'titles' ? 'First title' : 'First actor'}
+              value={primaryQuery}
+              placeholder={PRIMARY_PLACEHOLDERS[mode]}
+              inputKind={primaryFieldConfig.inputKind}
+              suggestions={primaryFieldConfig.suggestions}
+              selectedEntity={primaryFieldConfig.selectedEntity}
+              isLoading={primaryFieldConfig.isLoading}
+              minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
+              hasSearched={primaryFieldConfig.hasSearched}
+              onChange={handlePrimaryInputChange}
+              onSelect={handlePrimarySelect}
+              onClearSelection={clearPrimarySelection}
+            />
+
+            {mode !== 'bacon' ? <div className="search-row-plus" aria-hidden="true">+</div> : null}
+
+            {mode !== 'bacon' ? (
+              <SearchAutocompleteField
+                label={mode === 'titles' ? 'Second title' : 'Second actor'}
+                value={secondaryQuery}
+                placeholder={SECONDARY_PLACEHOLDERS[mode as 'actors' | 'titles']}
+                inputKind={secondaryFieldConfig.inputKind}
+                suggestions={secondaryFieldConfig.suggestions}
+                selectedEntity={secondaryFieldConfig.selectedEntity}
+                isLoading={secondaryFieldConfig.isLoading}
+                minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
+                hasSearched={secondaryFieldConfig.hasSearched}
+                onChange={handleSecondaryInputChange}
+                onSelect={handleSecondarySelect}
+                onClearSelection={clearSecondarySelection}
               />
-            </label>
-            <label className={`search-mode-option${searchMode === 'tv-film' ? ' search-mode-option-active' : ''}`}>
-              <span>TV/Film</span>
-              <input
-                type="radio"
-                name="search-mode"
-                value="tv-film"
-                checked={searchMode === 'tv-film'}
-                onChange={() => handleSearchModeChange('tv-film')}
-              />
-            </label>
-            <label className={`search-mode-option${searchMode === 'bacon-law' ? ' search-mode-option-active' : ''}`}>
-              <span>Bacon&apos;s Law</span>
-              <input
-                type="radio"
-                name="search-mode"
-                value="bacon-law"
-                checked={searchMode === 'bacon-law'}
-                onChange={() => handleSearchModeChange('bacon-law')}
-              />
-            </label>
+            ) : null}
           </div>
-          <p className="panel-note">
-            {searchMode === 'tv-film'
-              ? 'Select two titles and shared cast will appear automatically.'
-              : searchMode === 'actor'
-                ? 'Select two actors and common credits will load automatically.'
-                : 'Select one actor and the Kevin Bacon path will load automatically.'}
-          </p>
 
-          <CommonCastForm
-            leftTitle={leftTitle}
-            rightTitle={rightTitle}
-            isLoading={isLoading}
-            leftLabel={activeFormContent.leftLabel}
-            rightLabel={activeFormContent.rightLabel}
-            leftPlaceholder={activeFormContent.leftPlaceholder}
-            rightPlaceholder={activeFormContent.rightPlaceholder}
-            secondaryActionLabel={searchMode === 'bacon-law' ? undefined : 'Random Match'}
-            leftAutocomplete={leftAutocomplete}
-            rightAutocomplete={rightAutocomplete}
-            onLeftTitleChange={handleLeftInputChange}
-            onRightTitleChange={handleRightInputChange}
-            onSecondaryAction={searchMode === 'bacon-law' ? undefined : handleRandomMatch}
-            showRightInput={activeFormContent.showRightInput}
-          />
+          {mode !== 'bacon' ? (
+            <div className="search-panel-actions">
+              <button type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
+                Random Match
+              </button>
+            </div>
+          ) : null}
+
+          {mode === 'bacon' ? <BaconPathSection isLoading={isLoading} errorMessage={errorMessage} result={baconResult} /> : null}
         </section>
 
-        {isLoading ? <p className="status status-loading">{loadingMessage}</p> : null}
-        {errorMessage ? <p className="status status-error">{errorMessage}</p> : null}
-
-        {resultsView ? (
-          <ResultsGallery
-            heading={resultsView.heading}
-            context={resultsView.context}
-            cards={resultsView.cards}
-            emptyMessage={resultsView.emptyMessage}
+        {mode !== 'bacon' ? (
+          <ResultsSection
+            hasSearched={hasSearched}
+            isLoading={isLoading}
+            resultCount={resultCount}
+            cards={resultCards}
+            emptyDescription={
+              mode === 'actors'
+                ? 'Try searching for different actors to see shared titles.'
+                : 'Try searching for different titles to see overlapping cast.'
+            }
+            errorMessage={errorMessage}
+            showingHiddenExtras={showingHiddenExtras}
           />
         ) : null}
       </main>
+
+      <TmdbFooter />
+
+      <HowItWorksDialog open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   )
 }

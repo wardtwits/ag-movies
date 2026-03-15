@@ -54,7 +54,6 @@ export const CommonCastForm = ({
         label={leftLabel}
         value={leftTitle}
         placeholder={leftPlaceholder}
-        required
         inputKind={leftAutocomplete.inputKind}
         suggestions={leftAutocomplete.suggestions}
         selectedEntity={leftAutocomplete.selectedEntity}
@@ -72,8 +71,7 @@ export const CommonCastForm = ({
         <SearchAutocompleteField
           label={rightLabel ?? ''}
           value={rightTitle}
-          placeholder={rightPlaceholder}
-          required
+          placeholder={rightPlaceholder ?? ''}
           inputKind={rightAutocomplete?.inputKind ?? leftAutocomplete.inputKind}
           suggestions={rightAutocomplete?.suggestions ?? []}
           selectedEntity={rightAutocomplete?.selectedEntity ?? null}
@@ -88,12 +86,7 @@ export const CommonCastForm = ({
 
       {secondaryActionLabel && onSecondaryAction ? (
         <div className="compare-form-actions">
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={onSecondaryAction}
-            disabled={!canUseSecondaryAction}
-          >
+          <button className="secondary-button" type="button" onClick={onSecondaryAction} disabled={!canUseSecondaryAction}>
             {secondaryActionLabel}
           </button>
         </div>

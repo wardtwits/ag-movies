@@ -4,6 +4,7 @@ export interface SharedTitle {
   id: number
   mediaType: MediaType
   title: string
+  genreIds: number[]
   releaseDate?: string
   posterPath?: string | null
   popularity: number

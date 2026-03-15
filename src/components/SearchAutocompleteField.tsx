@@ -8,8 +8,7 @@ export type AutocompleteEntity = MediaTitle | PersonSummary
 interface SearchAutocompleteFieldProps {
   label: string
   value: string
-  placeholder?: string
-  required?: boolean
+  placeholder: string
   inputKind: 'media' | 'person'
   suggestions: AutocompleteEntity[]
   selectedEntity: AutocompleteEntity | null
@@ -25,34 +24,30 @@ const isMediaTitle = (entity: AutocompleteEntity): entity is MediaTitle => 'medi
 
 const getEntityLabel = (entity: AutocompleteEntity): string => (isMediaTitle(entity) ? entity.title : entity.name)
 
+const getEntityMeta = (entity: AutocompleteEntity): string => {
+  if (isMediaTitle(entity)) {
+    const releaseYear = entity.releaseDate?.slice(0, 4)
+    const typeLabel = entity.mediaType === 'movie' ? 'Movie' : 'TV Show'
+    return releaseYear ? `${typeLabel} • ${releaseYear}` : typeLabel
+  }
+
+  return entity.knownForDepartment?.trim() || 'Acting'
+}
+
 const getEntityImagePath = (entity: AutocompleteEntity): string | null | undefined =>
   isMediaTitle(entity) ? entity.posterPath : entity.profilePath
 
-const getEntityMeta = (entity: AutocompleteEntity): string => {
-  if (isMediaTitle(entity)) {
-    const year = entity.releaseDate?.slice(0, 4)
-    const mediaLabel = entity.mediaType === 'movie' ? 'Movie' : 'TV'
-    return year ? `${mediaLabel} • ${year}` : mediaLabel
-  }
-
-  return entity.knownForDepartment?.trim() || 'Person'
-}
-
 const getImageUrl = (path?: string | null): string | null => (path ? `${TMDB_IMAGE_BASE_URL}${path}` : null)
 
-const getFallbackMonogram = (label: string): string =>
-  label
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || '?'
+const getFallbackGlyph = (entity: AutocompleteEntity): string => {
+  const label = getEntityLabel(entity)
+  return label.charAt(0).toUpperCase() || '?'
+}
 
 export const SearchAutocompleteField = ({
   label,
   value,
   placeholder,
-  required = false,
   inputKind,
   suggestions,
   selectedEntity,
@@ -67,50 +62,42 @@ export const SearchAutocompleteField = ({
   const inputRef = useRef<HTMLInputElement>(null)
   const listboxId = useId()
   const trimmedValue = value.trim()
-  const selectedLabel = selectedEntity ? getEntityLabel(selectedEntity) : null
-  const isLockedSelection = Boolean(selectedEntity && selectedLabel === value)
+  const isSelected = selectedEntity !== null
   const shouldShowDropdown =
-    !isLockedSelection &&
+    !isSelected &&
     isFocused &&
     trimmedValue.length >= minimumQueryLength &&
     (isLoading || suggestions.length > 0 || hasSearched)
 
   const dropdownContent = useMemo(() => {
     if (isLoading) {
-      return <div className="autocomplete-state">Searching TMDB...</div>
+      return <div className="search-dropdown-state">Searching TMDB…</div>
     }
 
     if (!suggestions.length) {
-      return <div className="autocomplete-state">No matches found.</div>
+      return <div className="search-dropdown-state">No results found for &quot;{trimmedValue}&quot;</div>
     }
 
     return (
-      <ul className="autocomplete-list" role="listbox" id={listboxId}>
+      <ul className="search-dropdown-list" role="listbox" id={listboxId}>
         {suggestions.map((entity) => {
-          const itemLabel = getEntityLabel(entity)
           const imageUrl = getImageUrl(getEntityImagePath(entity))
           return (
-            <li key={`${inputKind}-${entity.id}`} className="autocomplete-list-item">
+            <li key={`${inputKind}-${entity.id}`}>
               <button
                 type="button"
-                className="autocomplete-option"
-                onMouseDown={(event) => {
-                  event.preventDefault()
-                }}
+                className="search-dropdown-option"
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   onSelect(entity)
                   setIsFocused(false)
                 }}
               >
-                {imageUrl ? (
-                  <img className="autocomplete-thumb" src={imageUrl} alt="" />
-                ) : (
-                  <span className="autocomplete-thumb autocomplete-thumb-fallback" aria-hidden="true">
-                    {getFallbackMonogram(itemLabel)}
-                  </span>
-                )}
-                <span className="autocomplete-copy">
-                  <strong>{itemLabel}</strong>
+                <span className="search-dropdown-avatar" aria-hidden="true">
+                  {imageUrl ? <img src={imageUrl} alt="" /> : <span>{getFallbackGlyph(entity)}</span>}
+                </span>
+                <span className="search-dropdown-copy">
+                  <strong>{getEntityLabel(entity)}</strong>
                   <span>{getEntityMeta(entity)}</span>
                 </span>
               </button>
@@ -119,77 +106,83 @@ export const SearchAutocompleteField = ({
         })}
       </ul>
     )
-  }, [inputKind, isLoading, listboxId, onSelect, suggestions])
+  }, [inputKind, isLoading, listboxId, onSelect, suggestions, trimmedValue])
 
-  const selectedImageUrl = selectedEntity ? getImageUrl(getEntityImagePath(selectedEntity)) : null
-  const selectedMeta = selectedEntity ? getEntityMeta(selectedEntity) : null
+  const handleClear = () => {
+    onClearSelection()
+    window.setTimeout(() => {
+      inputRef.current?.focus()
+    }, 0)
+  }
 
   return (
-    <label className="input-group">
-      <span className="input-label">{label}</span>
-      <div className="autocomplete-shell">
-        <div className="autocomplete-input-shell">
+    <div className="search-field">
+      {selectedEntity ? (
+        <div
+          className="search-selected-shell"
+          tabIndex={0}
+          role="group"
+          aria-label={`${label}: ${getEntityLabel(selectedEntity)} selected. Press Delete or Backspace to clear.`}
+          onKeyDown={(event) => {
+            if (event.key === 'Backspace' || event.key === 'Delete') {
+              event.preventDefault()
+              handleClear()
+            }
+          }}
+        >
+          <span className="search-selected-avatar" aria-hidden="true">
+            {getImageUrl(getEntityImagePath(selectedEntity)) ? (
+              <img src={getImageUrl(getEntityImagePath(selectedEntity)) ?? undefined} alt="" />
+            ) : (
+              <span>{getFallbackGlyph(selectedEntity)}</span>
+            )}
+          </span>
+          <span className="search-selected-label">{getEntityLabel(selectedEntity)}</span>
+          <button
+            type="button"
+            className="search-selected-clear"
+            aria-label={`Clear ${getEntityLabel(selectedEntity)}`}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={handleClear}
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <div className="search-input-shell">
+          <span className="search-input-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M21 21l-4.4-4.4m1.4-5.1a7 7 0 11-14 0 7 7 0 0114 0z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
           <input
             ref={inputRef}
-            className={isLockedSelection ? 'autocomplete-input-locked' : undefined}
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            placeholder={placeholder}
-            autoComplete="off"
-            aria-autocomplete="list"
-            aria-expanded={shouldShowDropdown}
-            aria-controls={shouldShowDropdown ? listboxId : undefined}
-            aria-readonly={isLockedSelection}
-            readOnly={isLockedSelection}
             onFocus={() => setIsFocused(true)}
             onBlur={() => {
               window.setTimeout(() => setIsFocused(false), 100)
             }}
-            onKeyDown={(event) => {
-              if (isLockedSelection && (event.key === 'Backspace' || event.key === 'Delete')) {
-                event.preventDefault()
-                onClearSelection()
-              }
-            }}
-            required={required}
+            placeholder={placeholder}
+            autoComplete="off"
+            aria-label={label}
+            aria-autocomplete="list"
+            aria-expanded={shouldShowDropdown}
+            aria-controls={shouldShowDropdown ? listboxId : undefined}
           />
-
-          {isLockedSelection && selectedEntity ? (
-            <div className="autocomplete-selected-card" aria-hidden="true">
-              {selectedImageUrl ? (
-                <img className="autocomplete-selected-thumb" src={selectedImageUrl} alt="" />
-              ) : (
-                <span className="autocomplete-selected-thumb autocomplete-thumb-fallback">
-                  {getFallbackMonogram(getEntityLabel(selectedEntity))}
-                </span>
-              )}
-              <span className="autocomplete-selected-copy">
-                <strong>{getEntityLabel(selectedEntity)}</strong>
-                <span>{selectedMeta}</span>
-              </span>
-            </div>
-          ) : null}
-
-          {isLockedSelection ? (
-            <button
-              type="button"
-              className="autocomplete-clear"
-              aria-label={`Clear ${label}`}
-              onMouseDown={(event) => {
-                event.preventDefault()
-              }}
-              onClick={() => {
-                onClearSelection()
-                inputRef.current?.focus()
-              }}
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          ) : null}
+          <span className="search-input-trailing" aria-hidden="true">
+            {isLoading ? <span className="search-input-spinner" /> : null}
+          </span>
         </div>
+      )}
 
-        {shouldShowDropdown ? <div className="autocomplete-dropdown">{dropdownContent}</div> : null}
-      </div>
-    </label>
+      {shouldShowDropdown ? <div className="search-dropdown">{dropdownContent}</div> : null}
+    </div>
   )
 }
