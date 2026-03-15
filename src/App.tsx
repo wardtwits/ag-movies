@@ -121,6 +121,8 @@ const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
   titles: 'Search second movie or show...',
 }
 
+const SHOW_RANDOM_MATCH = false
+
 function App() {
   const [mode, setMode] = useState<SearchMode>('actors')
   const [primaryQuery, setPrimaryQuery] = useState('')
@@ -487,7 +489,7 @@ function App() {
             ) : null}
           </div>
 
-          {mode !== 'bacon' ? (
+          {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
             <div className="search-panel-actions">
               <button type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
                 Random Match
