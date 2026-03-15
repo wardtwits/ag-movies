@@ -273,6 +273,17 @@ export const searchPeople = async (query: string, signal?: AbortSignal): Promise
     .sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))
 }
 
+export const fetchPopularPeople = async (page = 1): Promise<PersonSummary[]> => {
+  const response = await requestTmdb<TmdbPersonSearchResponse>('/person/popular', {
+    language: 'en-US',
+    page,
+  })
+
+  return response.results
+    .map(mapPersonSearchResult)
+    .sort((left, right) => right.popularity - left.popularity)
+}
+
 export const resolveTitle = async (query: string, visibility: VisibilityMode = 'all'): Promise<MediaTitle> => {
   const cleanQuery = query.trim()
   if (!cleanQuery) {

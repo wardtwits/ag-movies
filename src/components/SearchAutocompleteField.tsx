@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useId, useMemo, useRef, useState } from 'react'
 import type { MediaTitle, PersonSummary } from '../domain/media'
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w92'
@@ -15,6 +15,7 @@ interface SearchAutocompleteFieldProps {
   isLoading: boolean
   minimumQueryLength: number
   hasSearched: boolean
+  trailingAction?: ReactNode
   onChange: (value: string) => void
   onSelect: (entity: AutocompleteEntity) => void
   onClearSelection: () => void
@@ -54,6 +55,7 @@ export const SearchAutocompleteField = ({
   isLoading,
   minimumQueryLength,
   hasSearched,
+  trailingAction,
   onChange,
   onSelect,
   onClearSelection,
@@ -176,8 +178,9 @@ export const SearchAutocompleteField = ({
             aria-expanded={shouldShowDropdown}
             aria-controls={shouldShowDropdown ? listboxId : undefined}
           />
-          <span className="search-input-trailing" aria-hidden="true">
-            {isLoading ? <span className="search-input-spinner" /> : null}
+          <span className="search-input-trailing">
+            {trailingAction ? <span className="search-input-action-slot">{trailingAction}</span> : null}
+            {isLoading ? <span className="search-input-spinner" aria-hidden="true" /> : null}
           </span>
         </div>
       )}

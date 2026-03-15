@@ -28,7 +28,11 @@ import {
   findCommonTitlesFromPeople,
 } from './features/common-titles/commonTitlesService'
 import type { CommonTitlesResult, SharedTitle } from './features/common-titles/types'
-import { findRandomCommonCastMatch, findRandomCommonTitlesMatch } from './features/random-match/randomMatchService'
+import {
+  findRandomBaconActor,
+  findRandomCommonCastMatch,
+  findRandomCommonTitlesMatch,
+} from './features/random-match/randomMatchService'
 import './App.css'
 
 type SearchSelection = MediaTitle | PersonSummary
@@ -122,6 +126,87 @@ const mapSharedTitleToCard = (title: SharedTitle) => ({
   imagePath: title.posterPath,
 })
 
+const getSharedTitleKey = (title: SharedTitle): string => `${title.mediaType}-${title.id}`
+
+const compareTitlesByPopularity = (left: SharedTitle, right: SharedTitle): number => {
+  if (right.popularity !== left.popularity) {
+    return right.popularity - left.popularity
+  }
+
+  if (right.voteCount !== left.voteCount) {
+    return right.voteCount - left.voteCount
+  }
+
+  return left.title.localeCompare(right.title)
+}
+
+const compareTitlesByEarliestRelease = (left: SharedTitle, right: SharedTitle): number => {
+  if (left.releaseDate && right.releaseDate && left.releaseDate !== right.releaseDate) {
+    return left.releaseDate.localeCompare(right.releaseDate)
+  }
+
+  if (left.releaseDate && !right.releaseDate) {
+    return -1
+  }
+
+  if (!left.releaseDate && right.releaseDate) {
+    return 1
+  }
+
+  return compareTitlesByPopularity(left, right)
+}
+
+const compareTitlesByMostRecentRelease = (left: SharedTitle, right: SharedTitle): number => {
+  if (left.releaseDate && right.releaseDate && left.releaseDate !== right.releaseDate) {
+    return right.releaseDate.localeCompare(left.releaseDate)
+  }
+
+  if (left.releaseDate && !right.releaseDate) {
+    return -1
+  }
+
+  if (!left.releaseDate && right.releaseDate) {
+    return 1
+  }
+
+  return compareTitlesByPopularity(left, right)
+}
+
+const pickHighlightedActorTitles = (
+  titles: SharedTitle[],
+): Array<{ title: SharedTitle; metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent' }> => {
+  const highlighted: Array<{ title: SharedTitle; metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent' }> = []
+  const usedKeys = new Set<string>()
+
+  const pickNext = (
+    candidates: SharedTitle[],
+    metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent',
+    compare: (left: SharedTitle, right: SharedTitle) => number,
+  ) => {
+    const nextTitle = [...candidates].filter((title) => !usedKeys.has(getSharedTitleKey(title))).sort(compare)[0]
+    if (!nextTitle) {
+      return
+    }
+
+    usedKeys.add(getSharedTitleKey(nextTitle))
+    highlighted.push({ title: nextTitle, metaLabel })
+  }
+
+  pickNext(titles, 'Most Popular', compareTitlesByPopularity)
+  pickNext(
+    titles.filter((title) => Boolean(title.releaseDate)),
+    'Earliest',
+    compareTitlesByEarliestRelease,
+  )
+  pickNext(
+    titles.filter((title) => Boolean(title.releaseDate)),
+    'Most Recent',
+    compareTitlesByMostRecentRelease,
+  )
+
+  return highlighted
+}
+
 const mapSharedActorToCard = (actor: SharedActor) => ({
   id: `person-${actor.id}`,
   title: actor.name,
@@ -172,7 +257,7 @@ const buildResultGroups = (featuredCards: ReturnType<typeof mapSharedActorToCard
 const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
   actors: 'Search first actor...',
   titles: 'Search first movie or show...',
-  bacon: 'Search an actor…',
+  bacon: 'Search an actor, or...',
 }
 
 const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
@@ -191,6 +276,7 @@ function App() {
   const [filterExtras, setFilterExtras] = useState(true)
   const [showingHiddenExtras, setShowingHiddenExtras] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isPickingRandomBaconActor, setIsPickingRandomBaconActor] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [comparisonState, setComparisonState] = useState<ComparisonSearchState | null>(null)
@@ -262,14 +348,33 @@ function App() {
     }
 
     if (displayedComparisonState.kind === 'actors') {
-      const featuredTitles = displayedComparisonState.result.sharedTitles.filter(
+      const highlightedTitles = pickHighlightedActorTitles(displayedComparisonState.result.sharedTitles)
+      const highlightedTitleKeys = new Set(highlightedTitles.map(({ title }) => getSharedTitleKey(title)))
+      const remainingTitles = displayedComparisonState.result.sharedTitles
+        .filter((title) => !highlightedTitleKeys.has(getSharedTitleKey(title)))
+        .sort(compareTitlesByPopularity)
+
+      const featuredTitles = remainingTitles.filter(
         (title) => isStarBillingOrder(title.leftOrder) || isStarBillingOrder(title.rightOrder),
       )
-      const extraTitles = displayedComparisonState.result.sharedTitles.filter(
+      const extraTitles = remainingTitles.filter(
         (title) => !isStarBillingOrder(title.leftOrder) && !isStarBillingOrder(title.rightOrder),
       )
 
-      return buildResultGroups(featuredTitles.map(mapSharedTitleToCard), extraTitles.map(mapSharedTitleToCard))
+      return [
+        ...(highlightedTitles.length
+          ? [
+              {
+                id: 'highlights',
+                cards: highlightedTitles.map(({ title, metaLabel }) => ({
+                  ...mapSharedTitleToCard(title),
+                  metaLabel,
+                })),
+              },
+            ]
+          : []),
+        ...buildResultGroups(featuredTitles.map(mapSharedTitleToCard), extraTitles.map(mapSharedTitleToCard)),
+      ]
     }
 
     const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
@@ -420,6 +525,26 @@ function App() {
     }
   }
 
+  const handleRandomBaconActor = async () => {
+    if (mode !== 'bacon' || isPickingRandomBaconActor || isPersonSelection(primarySelection)) {
+      return
+    }
+
+    setIsPickingRandomBaconActor(true)
+    setErrorMessage(null)
+
+    try {
+      const selection = await findRandomBaconActor(isPersonSelection(primarySelection) ? primarySelection : null)
+      setPrimarySelection(selection)
+      setPrimaryQuery(selection.name)
+      setShowingHiddenExtras(false)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to pick a random actor.')
+    } finally {
+      setIsPickingRandomBaconActor(false)
+    }
+  }
+
   useEffect(() => {
     if (!activeSearchKey) {
       searchRequestIdRef.current += 1
@@ -512,6 +637,19 @@ function App() {
           inputKind: 'person' as const,
         }
 
+  const baconTrailingAction =
+    mode === 'bacon' && !isPersonSelection(primarySelection) ? (
+      <button
+        type="button"
+        className="search-inline-action-button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={handleRandomBaconActor}
+        disabled={isPickingRandomBaconActor}
+      >
+        {isPickingRandomBaconActor ? 'Picking…' : 'Surprise Me'}
+      </button>
+    ) : undefined
+
   const secondaryFieldConfig =
     mode === 'titles'
       ? {
@@ -563,6 +701,7 @@ function App() {
               isLoading={primaryFieldConfig.isLoading}
               minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
               hasSearched={primaryFieldConfig.hasSearched}
+              trailingAction={baconTrailingAction}
               onChange={handlePrimaryInputChange}
               onSelect={handlePrimarySelect}
               onClearSelection={clearPrimarySelection}

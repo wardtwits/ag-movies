@@ -4,6 +4,7 @@ export interface ResultCardData {
   id: string
   title: string
   subtitle: string
+  metaLabel?: string
   href: string
   imagePath?: string | null
 }
@@ -41,6 +42,7 @@ export const ResultCard = ({ card }: ResultCardProps) => {
         <p title={card.subtitle} aria-label={card.subtitle}>
           {card.subtitle}
         </p>
+        {card.metaLabel ? <p className="result-card-meta-label">{card.metaLabel}</p> : null}
       </div>
     </a>
   )
