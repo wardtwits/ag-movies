@@ -1,10 +1,16 @@
 import { ResultCard, type ResultCardData } from './ResultCard'
 
+export interface ResultCardGroup {
+  id: string
+  title?: string
+  cards: ResultCardData[]
+}
+
 interface ResultsSectionProps {
   hasSearched: boolean
   isLoading: boolean
   resultCount: number
-  cards: ResultCardData[]
+  groups: ResultCardGroup[]
   emptyDescription: string
   errorMessage: string | null
   showingHiddenExtras: boolean
@@ -16,7 +22,7 @@ export const ResultsSection = ({
   hasSearched,
   isLoading,
   resultCount,
-  cards,
+  groups,
   emptyDescription,
   errorMessage,
   showingHiddenExtras,
@@ -50,10 +56,22 @@ export const ResultsSection = ({
             </div>
           ))}
         </div>
-      ) : cards.length ? (
-        <div className="results-grid">
-          {cards.map((card) => (
-            <ResultCard key={card.id} card={card} />
+      ) : groups.some((group) => group.cards.length > 0) ? (
+        <div className="results-groups">
+          {groups.filter((group) => group.cards.length > 0).map((group, index) => (
+            <section key={group.id} className="results-group">
+              {group.title ? (
+                <div className={`results-group-divider${index > 0 ? ' results-group-divider-separated' : ''}`}>
+                  <span>{group.title}</span>
+                </div>
+              ) : null}
+
+              <div className="results-grid">
+                {group.cards.map((card) => (
+                  <ResultCard key={card.id} card={card} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       ) : (

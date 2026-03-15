@@ -5,9 +5,10 @@ import { BaconPathSection } from './components/BaconPathSection'
 import { FilterToggle } from './components/FilterToggle'
 import { HeroHeader, type SearchMode } from './components/HeroHeader'
 import { HowItWorksDialog } from './components/HowItWorksDialog'
-import { ResultsSection } from './components/ResultsSection'
+import { ResultsSection, type ResultCardGroup } from './components/ResultsSection'
 import { SearchAutocompleteField } from './components/SearchAutocompleteField'
 import { TmdbFooter } from './components/TmdbFooter'
+import { isStarBillingOrder } from './domain/billing'
 import type { MediaTitle, PersonSummary } from './domain/media'
 import {
   AUTOCOMPLETE_MIN_QUERY_LENGTH,
@@ -131,6 +132,28 @@ const mapSharedActorToCard = (actor: SharedActor) => ({
   imagePath: actor.profilePath,
 })
 
+const buildResultGroups = (featuredCards: ReturnType<typeof mapSharedActorToCard>[], extraCards: ReturnType<typeof mapSharedActorToCard>[]): ResultCardGroup[] => {
+  const groups: ResultCardGroup[] = []
+
+  if (featuredCards.length) {
+    groups.push({
+      id: 'featured',
+      title: 'Stars / Featured',
+      cards: featuredCards,
+    })
+  }
+
+  if (extraCards.length) {
+    groups.push({
+      id: 'extras',
+      title: 'Extras or Guests',
+      cards: extraCards,
+    })
+  }
+
+  return groups
+}
+
 const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
   actors: 'Search first actor...',
   titles: 'Search first movie or show...',
@@ -218,14 +241,26 @@ function App() {
     return isFilteringVisibleOnly ? filteredComparisonState : comparisonState
   }, [comparisonState, filteredComparisonState, isFilteringVisibleOnly])
 
-  const resultCards = useMemo(() => {
+  const resultGroups = useMemo<ResultCardGroup[]>(() => {
     if (!displayedComparisonState) {
       return []
     }
 
-    return displayedComparisonState.kind === 'actors'
-      ? displayedComparisonState.result.sharedTitles.map(mapSharedTitleToCard)
-      : displayedComparisonState.result.sharedActors.map(mapSharedActorToCard)
+    if (displayedComparisonState.kind === 'actors') {
+      const featuredTitles = displayedComparisonState.result.sharedTitles.filter(
+        (title) => isStarBillingOrder(title.leftOrder) || isStarBillingOrder(title.rightOrder),
+      )
+      const extraTitles = displayedComparisonState.result.sharedTitles.filter(
+        (title) => !isStarBillingOrder(title.leftOrder) && !isStarBillingOrder(title.rightOrder),
+      )
+
+      return buildResultGroups(featuredTitles.map(mapSharedTitleToCard), extraTitles.map(mapSharedTitleToCard))
+    }
+
+    const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
+    const extraActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory === 'extra-both')
+
+    return buildResultGroups(featuredActors.map(mapSharedActorToCard), extraActors.map(mapSharedActorToCard))
   }, [displayedComparisonState])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
@@ -560,7 +595,7 @@ function App() {
             hasSearched={hasSearched}
             isLoading={isLoading}
             resultCount={resultCount}
-            cards={resultCards}
+            groups={resultGroups}
             emptyDescription={
               mode === 'actors'
                 ? 'Try searching for different actors to see shared titles.'

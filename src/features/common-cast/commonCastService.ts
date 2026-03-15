@@ -1,17 +1,15 @@
 import type { VisibilityMode } from '../../api/tmdbClient'
 import { fetchCastForMedia, resolveTitleToCast } from '../../api/tmdbClient'
+import { isStarBillingOrder } from '../../domain/billing'
 import type { CastMember, MediaTitle, MediaWithCast } from '../../domain/media'
 import { isSelfCharacter } from '../../domain/mediaFilters'
 import type { CommonCastResult, SharedActor } from './types'
 
 const sanitizeCharacter = (value?: string): string | undefined => value?.trim() || undefined
-const STAR_BILLING_ORDER_THRESHOLD = 8
-
-const isStarBilling = (order: number): boolean => order <= STAR_BILLING_ORDER_THRESHOLD
 
 const resolveRoleCategory = (leftOrder: number, rightOrder: number): SharedActor['roleCategory'] => {
-  const leftIsStar = isStarBilling(leftOrder)
-  const rightIsStar = isStarBilling(rightOrder)
+  const leftIsStar = isStarBillingOrder(leftOrder)
+  const rightIsStar = isStarBillingOrder(rightOrder)
 
   if (leftIsStar && rightIsStar) {
     return 'star-both'
