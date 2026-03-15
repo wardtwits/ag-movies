@@ -38,7 +38,9 @@ export const ResultCard = ({ card }: ResultCardProps) => {
       </div>
       <div className="result-card-copy">
         <h3>{card.title}</h3>
-        <p>{card.subtitle}</p>
+        <p title={card.subtitle} aria-label={card.subtitle}>
+          {card.subtitle}
+        </p>
       </div>
     </a>
   )

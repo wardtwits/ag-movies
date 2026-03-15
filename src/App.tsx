@@ -185,6 +185,12 @@ function App() {
   )
 
   const isFilteringVisibleOnly = filterExtras && !showingHiddenExtras
+  const canClearSearchFields =
+    Boolean(primaryQuery.trim()) ||
+    Boolean(secondaryQuery.trim()) ||
+    primarySelection !== null ||
+    secondarySelection !== null ||
+    hasSearched
 
   const filteredComparisonState = useMemo<ComparisonSearchState | null>(() => {
     if (!comparisonState) {
@@ -477,15 +483,18 @@ function App() {
         <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
         <section className="search-panel">
-          {mode !== 'bacon' ? (
-            <FilterToggle
-              checked={isFilteringVisibleOnly}
-              onChange={(checked) => {
-                setFilterExtras(checked)
-                setShowingHiddenExtras(false)
-              }}
-            />
-          ) : null}
+          <div className="search-panel-toolbar">
+            {mode !== 'bacon' ? (
+              <button
+                type="button"
+                className="clear-search-button"
+                onClick={resetSelectionsAndResults}
+                disabled={!canClearSearchFields}
+              >
+                Clear Both Fields
+              </button>
+            ) : null}
+          </div>
 
           <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
             <SearchAutocompleteField
@@ -522,6 +531,18 @@ function App() {
               />
             ) : null}
           </div>
+
+          {mode !== 'bacon' ? (
+            <div className="search-panel-filter-row">
+              <FilterToggle
+                checked={isFilteringVisibleOnly}
+                onChange={(checked) => {
+                  setFilterExtras(checked)
+                  setShowingHiddenExtras(false)
+                }}
+              />
+            </div>
+          ) : null}
 
           {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
             <div className="search-panel-actions">
