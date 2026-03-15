@@ -10,6 +10,9 @@ interface BaconPathSectionProps {
   isLoading: boolean
   errorMessage: string | null
   result: BaconLawResult | null
+  showCopyResultsLink: boolean
+  copyResultsLinkLabel: string
+  onCopyResultsLink: () => void
 }
 
 const getProfileImageUrl = (path?: string | null): string | null => (path ? `${PROFILE_IMAGE_BASE_URL}${path}` : null)
@@ -40,7 +43,14 @@ const getDegreeAccentClassName = (degree: number): string => {
   return 'bacon-degree-red'
 }
 
-export const BaconPathSection = ({ isLoading, errorMessage, result }: BaconPathSectionProps) => {
+export const BaconPathSection = ({
+  isLoading,
+  errorMessage,
+  result,
+  showCopyResultsLink,
+  copyResultsLinkLabel,
+  onCopyResultsLink,
+}: BaconPathSectionProps) => {
   if (!isLoading && !errorMessage && !result) {
     return null
   }
@@ -64,6 +74,13 @@ export const BaconPathSection = ({ isLoading, errorMessage, result }: BaconPathS
 
   return (
     <section className="bacon-section" aria-live="polite">
+      {showCopyResultsLink ? (
+        <div className="bacon-share-row">
+          <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
+            {copyResultsLinkLabel}
+          </button>
+        </div>
+      ) : null}
       <div className="bacon-degree-block">
         <div className={`bacon-degree ${getDegreeAccentClassName(result.degree)}`}>{result.degree}</div>
         <p>{getDegreeLabel(result.degree)}</p>

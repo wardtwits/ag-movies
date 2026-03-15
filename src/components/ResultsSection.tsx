@@ -18,6 +18,9 @@ interface ResultsSectionProps {
   showFilterToggle: boolean
   filterChecked: boolean
   onFilterChange: (checked: boolean) => void
+  showCopyResultsLink: boolean
+  copyResultsLinkLabel: string
+  onCopyResultsLink: () => void
 }
 
 const LOADING_PLACEHOLDERS = Array.from({ length: 6 }, (_, index) => `skeleton-${index}`)
@@ -33,6 +36,9 @@ export const ResultsSection = ({
   showFilterToggle,
   filterChecked,
   onFilterChange,
+  showCopyResultsLink,
+  copyResultsLinkLabel,
+  onCopyResultsLink,
 }: ResultsSectionProps) => {
   if (!hasSearched) {
     return null
@@ -44,6 +50,11 @@ export const ResultsSection = ({
         <h2>
           Results <span>({resultCount})</span>
         </h2>
+        {showCopyResultsLink ? (
+          <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
+            {copyResultsLinkLabel}
+          </button>
+        ) : null}
         {showFilterToggle ? (
           <div className="results-filter-row">
             <FilterToggle checked={filterChecked} onChange={onFilterChange} />

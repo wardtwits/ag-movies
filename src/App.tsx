@@ -22,24 +22,28 @@ import {
   filterCommonCastResult,
   findCommonCastFromMedia,
 } from './features/common-cast/commonCastService'
-import type { CommonCastResult, SharedActor } from './features/common-cast/types'
+import type { SharedActor } from './features/common-cast/types'
 import {
   filterCommonTitlesResult,
   findCommonTitlesFromPeople,
 } from './features/common-titles/commonTitlesService'
-import type { CommonTitlesResult, SharedTitle } from './features/common-titles/types'
+import type { SharedTitle } from './features/common-titles/types'
 import {
   findRandomBaconActor,
   findRandomCommonCastMatch,
   findRandomCommonTitlesMatch,
 } from './features/random-match/randomMatchService'
+import {
+  createShareUrl,
+  parseShareSnapshotFromHash,
+  type ShareComparisonState,
+  type ShareSelection,
+} from './features/share/shareState'
 import './App.css'
 
 type SearchSelection = MediaTitle | PersonSummary
 
-type ComparisonSearchState =
-  | { kind: 'actors'; result: CommonTitlesResult }
-  | { kind: 'titles'; result: CommonCastResult }
+type ComparisonSearchState = ShareComparisonState
 
 const isMediaSelection = (selection: SearchSelection | null): selection is MediaTitle =>
   selection !== null && 'mediaType' in selection
@@ -278,10 +282,12 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [comparisonState, setComparisonState] = useState<ComparisonSearchState | null>(null)
   const [baconResult, setBaconResult] = useState<BaconLawResult | null>(null)
+  const [shareCopyState, setShareCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const [aboutOpen, setAboutOpen] = useState(false)
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const searchRequestIdRef = useRef(0)
   const lastCompletedSearchKeyRef = useRef<string | null>(null)
+  const shareCopyResetTimeoutRef = useRef<number | null>(null)
 
   const primaryMediaAutocomplete = useAutocompleteSuggestions(primaryQuery, {
     enabled: mode === 'titles',
@@ -379,6 +385,57 @@ function App() {
   const resultCount = getComparisonResultCount(displayedComparisonState)
   const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0
   const shouldShowClearButton = mode !== 'bacon' && resultCount > 0
+  const shouldShowCopyResultsLink =
+    !isLoading &&
+    !errorMessage &&
+    ((mode !== 'bacon' && activeSearchKey !== null && hasSearched) || (mode === 'bacon' && baconResult !== null))
+  const copyResultsLinkLabel =
+    shareCopyState === 'copied' ? 'Copied' : shareCopyState === 'error' ? 'Unable to copy' : 'Copy Results Link'
+
+  useEffect(() => {
+    return () => {
+      if (shareCopyResetTimeoutRef.current !== null) {
+        window.clearTimeout(shareCopyResetTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    setShareCopyState('idle')
+  }, [activeSearchKey, isFilteringVisibleOnly, showingHiddenExtras, resultCount, baconResult])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const shareSnapshot = parseShareSnapshotFromHash(window.location.hash)
+    if (!shareSnapshot) {
+      return
+    }
+
+    const primaryShareSelection = shareSnapshot.primarySelection as SearchSelection | null
+    const secondaryShareSelection = shareSnapshot.secondarySelection as SearchSelection | null
+
+    searchRequestIdRef.current += 1
+    lastCompletedSearchKeyRef.current =
+      shareSnapshot.comparisonState || shareSnapshot.baconResult
+        ? getActiveSearchKey(shareSnapshot.mode, primaryShareSelection, secondaryShareSelection)
+        : null
+
+    setMode(shareSnapshot.mode)
+    setFilterExtras(shareSnapshot.filterExtras)
+    setShowingHiddenExtras(shareSnapshot.showingHiddenExtras)
+    setPrimarySelection(primaryShareSelection)
+    setSecondarySelection(secondaryShareSelection)
+    setPrimaryQuery(primaryShareSelection ? getSelectionLabel(primaryShareSelection) : '')
+    setSecondaryQuery(secondaryShareSelection ? getSelectionLabel(secondaryShareSelection) : '')
+    setComparisonState(shareSnapshot.comparisonState)
+    setBaconResult(shareSnapshot.baconResult)
+    setHasSearched(Boolean(shareSnapshot.comparisonState || shareSnapshot.baconResult))
+    setIsLoading(false)
+    setErrorMessage(null)
+  }, [])
 
   useEffect(() => {
     if (mode === 'bacon' || !comparisonState || !filterExtras || showingHiddenExtras) {
@@ -462,6 +519,60 @@ function App() {
     setSecondaryQuery('')
     setErrorMessage(null)
     setShowingHiddenExtras(false)
+  }
+
+  const copyTextToClipboard = async (value: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value)
+      return
+    }
+
+    const textArea = document.createElement('textarea')
+    textArea.value = value
+    textArea.setAttribute('readonly', 'true')
+    textArea.style.position = 'absolute'
+    textArea.style.left = '-9999px'
+    document.body.appendChild(textArea)
+    textArea.select()
+
+    const didCopy = document.execCommand('copy')
+    document.body.removeChild(textArea)
+
+    if (!didCopy) {
+      throw new Error('Copy command failed')
+    }
+  }
+
+  const handleCopyResultsLink = async () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const shareUrl = createShareUrl(`${window.location.origin}${window.location.pathname}${window.location.search}`, {
+      mode,
+      filterExtras,
+      showingHiddenExtras,
+      primarySelection: primarySelection as ShareSelection,
+      secondarySelection: secondarySelection as ShareSelection,
+      comparisonState,
+      baconResult,
+    })
+
+    try {
+      await copyTextToClipboard(shareUrl)
+      setShareCopyState('copied')
+    } catch {
+      setShareCopyState('error')
+    }
+
+    if (shareCopyResetTimeoutRef.current !== null) {
+      window.clearTimeout(shareCopyResetTimeoutRef.current)
+    }
+
+    shareCopyResetTimeoutRef.current = window.setTimeout(() => {
+      setShareCopyState('idle')
+      shareCopyResetTimeoutRef.current = null
+    }, 2000)
   }
 
   const handleRandomMatch = async () => {
@@ -726,7 +837,16 @@ function App() {
             </div>
           ) : null}
 
-          {mode === 'bacon' ? <BaconPathSection isLoading={isLoading} errorMessage={errorMessage} result={baconResult} /> : null}
+          {mode === 'bacon' ? (
+            <BaconPathSection
+              isLoading={isLoading}
+              errorMessage={errorMessage}
+              result={baconResult}
+              showCopyResultsLink={shouldShowCopyResultsLink}
+              copyResultsLinkLabel={copyResultsLinkLabel}
+              onCopyResultsLink={handleCopyResultsLink}
+            />
+          ) : null}
         </section>
 
         {mode !== 'bacon' ? (
@@ -748,6 +868,9 @@ function App() {
               setFilterExtras(checked)
               setShowingHiddenExtras(false)
             }}
+            showCopyResultsLink={shouldShowCopyResultsLink}
+            copyResultsLinkLabel={copyResultsLinkLabel}
+            onCopyResultsLink={handleCopyResultsLink}
           />
         ) : null}
       </main>
