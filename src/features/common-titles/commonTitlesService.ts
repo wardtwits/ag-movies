@@ -9,6 +9,7 @@ const combineCredit = (left: MediaCredit, right: MediaCredit): SharedTitle => ({
   mediaType: left.mediaType,
   title: left.title,
   releaseDate: left.releaseDate,
+  posterPath: left.posterPath ?? right.posterPath,
   popularity: Math.max(left.popularity, right.popularity),
   voteCount: Math.max(left.voteCount, right.voteCount),
   leftCharacter: sanitizeCharacter(left.character),

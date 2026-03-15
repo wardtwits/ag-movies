@@ -1,10 +1,6 @@
-import { useMemo, useState } from 'react'
-import { resolveActor, resolveTitle } from './api/tmdbClient'
-import { BaconPathGraph } from './components/BaconPathGraph'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CommonCastForm } from './components/CommonCastForm'
-import { CommonCastGraph } from './components/CommonCastGraph'
-import { findBaconConnectionFromPerson } from './features/bacon-law/baconLawService'
-import type { BaconLawResult } from './features/bacon-law/types'
+import { ResultsGallery, type ResultGalleryCard } from './components/ResultsGallery'
 import type { MediaTitle, PersonSummary } from './domain/media'
 import {
   AUTOCOMPLETE_MIN_QUERY_LENGTH,
@@ -12,34 +8,16 @@ import {
   fetchPersonSuggestions,
   useAutocompleteSuggestions,
 } from './features/autocomplete/useAutocompleteSuggestions'
+import { findBaconConnectionFromPerson } from './features/bacon-law/baconLawService'
+import type { BaconLawResult } from './features/bacon-law/types'
 import { findCommonCastFromMedia } from './features/common-cast/commonCastService'
-import { buildCommonCastGraph } from './features/common-cast/graphModel'
-import { findCommonTitlesFromPeople } from './features/common-titles/commonTitlesService'
-import { buildCommonTitlesGraph } from './features/common-titles/graphModel'
-import { findRandomCommonCastMatch, findRandomCommonTitlesMatch } from './features/random-match/randomMatchService'
 import type { CommonCastResult, SharedActorRoleCategory } from './features/common-cast/types'
+import { findCommonTitlesFromPeople } from './features/common-titles/commonTitlesService'
 import type { CommonTitlesResult } from './features/common-titles/types'
+import { findRandomCommonCastMatch, findRandomCommonTitlesMatch } from './features/random-match/randomMatchService'
 import './App.css'
 
 type SearchMode = 'tv-film' | 'actor' | 'bacon-law'
-
-const ROLE_LEGEND_ITEMS: Array<{
-  category: SharedActorRoleCategory
-  label: string
-  dotClassName: string
-}> = [
-  { category: 'star-both', label: 'Star on both', dotClassName: 'legend-star-both' },
-  { category: 'mixed', label: 'Star on one only', dotClassName: 'legend-mixed' },
-  { category: 'extra-both', label: 'Extra/supporting on both', dotClassName: 'legend-extra-both' },
-]
-
-const DEFAULT_ROLE_VISIBILITY: Record<SharedActorRoleCategory, boolean> = {
-  'star-both': true,
-  mixed: true,
-  'extra-both': true,
-}
-
-const EMPTY_GRAPH = { nodes: [], links: [] }
 type SearchSelection = MediaTitle | PersonSummary
 
 const isMediaSelection = (selection: SearchSelection | null): selection is MediaTitle =>
@@ -50,21 +28,116 @@ const isPersonSelection = (selection: SearchSelection | null): selection is Pers
 
 const getSelectionLabel = (selection: SearchSelection): string => ('mediaType' in selection ? selection.title : selection.name)
 
+const getMediaMeta = (mediaType: 'movie' | 'tv', releaseDate?: string): string => {
+  const kindLabel = mediaType === 'movie' ? 'Movie' : 'TV'
+  const releaseYear = releaseDate?.slice(0, 4)
+  return releaseYear ? `${kindLabel} • ${releaseYear}` : kindLabel
+}
+
+const getRoleSummary = (leftCharacter?: string, rightCharacter?: string): string => {
+  if (leftCharacter && rightCharacter) {
+    return `${leftCharacter} / ${rightCharacter}`
+  }
+  if (leftCharacter || rightCharacter) {
+    return `As ${leftCharacter ?? rightCharacter}`
+  }
+  return 'Shared cast'
+}
+
+const getRoleCategoryLabel = (category: SharedActorRoleCategory): string => {
+  switch (category) {
+    case 'star-both':
+      return 'Star on both'
+    case 'mixed':
+      return 'Star on one only'
+    case 'extra-both':
+      return 'Extra/supporting on both'
+  }
+}
+
+const getAutoSearchKey = (
+  mode: SearchMode,
+  leftSelection: SearchSelection | null,
+  rightSelection: SearchSelection | null,
+): string | null => {
+  if (mode === 'tv-film' && isMediaSelection(leftSelection) && isMediaSelection(rightSelection)) {
+    return `tv-film:${leftSelection.id}:${rightSelection.id}`
+  }
+
+  if (mode === 'actor' && isPersonSelection(leftSelection) && isPersonSelection(rightSelection)) {
+    return `actor:${leftSelection.id}:${rightSelection.id}`
+  }
+
+  if (mode === 'bacon-law' && isPersonSelection(leftSelection)) {
+    return `bacon-law:${leftSelection.id}`
+  }
+
+  return null
+}
+
+const buildBaconCards = (result: BaconLawResult): ResultGalleryCard[] => {
+  if (!result.steps.length) {
+    return [
+      {
+        id: `actor-${result.actor.person.id}`,
+        title: result.actor.person.name,
+        subtitle: 'Kevin Bacon',
+        detail: 'Degree 0',
+        imagePath: result.actor.person.profilePath,
+        visual: 'featured',
+      },
+    ]
+  }
+
+  const cards: ResultGalleryCard[] = [
+    {
+      id: `actor-${result.actor.person.id}`,
+      title: result.actor.person.name,
+      subtitle: result.steps[0].fromCharacter ? `As ${result.steps[0].fromCharacter}` : 'Selected actor',
+      detail: 'Start',
+      imagePath: result.actor.person.profilePath,
+      visual: 'person',
+    },
+  ]
+
+  result.steps.forEach((step, index) => {
+    cards.push({
+      id: `media-${index}-${step.media.mediaType}-${step.media.id}`,
+      title: step.media.title,
+      subtitle: getMediaMeta(step.media.mediaType, step.media.releaseDate),
+      detail: `${step.fromActor.name} to ${step.toActor.name}`,
+      imagePath: step.media.posterPath,
+      visual: step.media.mediaType,
+    })
+
+    const isKevinBacon = step.toActor.id === result.kevinBacon.person.id
+    cards.push({
+      id: `actor-${index}-${step.toActor.id}`,
+      title: step.toActor.name,
+      subtitle: step.toCharacter ? `As ${step.toCharacter}` : isKevinBacon ? 'Kevin Bacon' : 'Bridge actor',
+      detail: isKevinBacon ? `Degree ${result.degree}` : undefined,
+      imagePath: step.toActor.profilePath,
+      visual: isKevinBacon ? 'featured' : 'person',
+    })
+  })
+
+  return cards
+}
+
 function App() {
   const [searchMode, setSearchMode] = useState<SearchMode>('tv-film')
   const [leftTitle, setLeftTitle] = useState('')
   const [rightTitle, setRightTitle] = useState('')
   const [leftSelection, setLeftSelection] = useState<SearchSelection | null>(null)
   const [rightSelection, setRightSelection] = useState<SearchSelection | null>(null)
-  const [nodeSpacing, setNodeSpacing] = useState(1.5)
-  const [roleVisibility, setRoleVisibility] = useState<Record<SharedActorRoleCategory, boolean>>({
-    ...DEFAULT_ROLE_VISIBILITY,
-  })
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [commonCastResult, setCommonCastResult] = useState<CommonCastResult | null>(null)
   const [commonTitlesResult, setCommonTitlesResult] = useState<CommonTitlesResult | null>(null)
   const [baconLawResult, setBaconLawResult] = useState<BaconLawResult | null>(null)
+  const searchRequestIdRef = useRef(0)
+  const lastCompletedSearchKeyRef = useRef<string | null>(null)
+
   const leftMediaAutocomplete = useAutocompleteSuggestions(leftTitle, {
     enabled: searchMode === 'tv-film',
     loader: fetchMediaSuggestions,
@@ -82,34 +155,15 @@ function App() {
     loader: fetchPersonSuggestions,
   })
 
-  const filteredCastResult = useMemo(() => {
-    if (!commonCastResult) {
-      return null
-    }
-
-    return {
-      ...commonCastResult,
-      sharedActors: commonCastResult.sharedActors.filter((actor) => roleVisibility[actor.roleCategory]),
-    }
-  }, [commonCastResult, roleVisibility])
-
-  const castGraphData = useMemo(
-    () => (filteredCastResult ? buildCommonCastGraph(filteredCastResult) : EMPTY_GRAPH),
-    [filteredCastResult],
+  const activeSearchKey = useMemo(
+    () => getAutoSearchKey(searchMode, leftSelection, rightSelection),
+    [leftSelection, rightSelection, searchMode],
   )
 
-  const titlesGraphData = useMemo(
-    () => (commonTitlesResult ? buildCommonTitlesGraph(commonTitlesResult) : EMPTY_GRAPH),
-    [commonTitlesResult],
-  )
-
-  const activeGraphData = searchMode === 'tv-film' ? castGraphData : titlesGraphData
-
-  const toggleRoleCategory = (category: SharedActorRoleCategory) => {
-    setRoleVisibility((previous) => ({
-      ...previous,
-      [category]: !previous[category],
-    }))
+  const clearResults = () => {
+    setCommonCastResult(null)
+    setCommonTitlesResult(null)
+    setBaconLawResult(null)
   }
 
   const handleSearchModeChange = (mode: SearchMode) => {
@@ -117,14 +171,16 @@ function App() {
       return
     }
 
+    searchRequestIdRef.current += 1
+    lastCompletedSearchKeyRef.current = null
     setSearchMode(mode)
-    setErrorMessage(null)
-    setCommonCastResult(null)
-    setCommonTitlesResult(null)
-    setBaconLawResult(null)
+    setLeftTitle('')
+    setRightTitle('')
     setLeftSelection(null)
     setRightSelection(null)
-    setRoleVisibility({ ...DEFAULT_ROLE_VISIBILITY })
+    setErrorMessage(null)
+    setIsLoading(false)
+    clearResults()
   }
 
   const handleLeftInputChange = (value: string) => {
@@ -167,69 +223,19 @@ function App() {
     setErrorMessage(null)
   }
 
-  const handleSubmit = async () => {
-    setIsLoading(true)
-    setErrorMessage(null)
-
-    try {
-      if (searchMode === 'tv-film') {
-        const [leftMedia, rightMedia] = await Promise.all([
-          isMediaSelection(leftSelection) ? Promise.resolve(leftSelection) : resolveTitle(leftTitle),
-          isMediaSelection(rightSelection) ? Promise.resolve(rightSelection) : resolveTitle(rightTitle),
-        ])
-        const result = await findCommonCastFromMedia(leftMedia, rightMedia)
-        setLeftSelection(leftMedia)
-        setRightSelection(rightMedia)
-        setLeftTitle(leftMedia.title)
-        setRightTitle(rightMedia.title)
-        setCommonCastResult(result)
-        setCommonTitlesResult(null)
-        setBaconLawResult(null)
-      } else if (searchMode === 'actor') {
-        const [leftActor, rightActor] = await Promise.all([
-          isPersonSelection(leftSelection) ? Promise.resolve(leftSelection) : resolveActor(leftTitle),
-          isPersonSelection(rightSelection) ? Promise.resolve(rightSelection) : resolveActor(rightTitle),
-        ])
-        const result = await findCommonTitlesFromPeople(leftActor, rightActor)
-        setLeftSelection(leftActor)
-        setRightSelection(rightActor)
-        setLeftTitle(leftActor.name)
-        setRightTitle(rightActor.name)
-        setCommonTitlesResult(result)
-        setCommonCastResult(null)
-        setBaconLawResult(null)
-      } else {
-        const actor = isPersonSelection(leftSelection) ? leftSelection : await resolveActor(leftTitle)
-        const result = await findBaconConnectionFromPerson(actor)
-        setLeftSelection(actor)
-        setLeftTitle(actor.name)
-        setBaconLawResult(result)
-        setCommonCastResult(null)
-        setCommonTitlesResult(null)
-      }
-    } catch (error) {
-      setCommonCastResult(null)
-      setCommonTitlesResult(null)
-      setBaconLawResult(null)
-      const message = error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.'
-      setErrorMessage(message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleRandomMatch = async () => {
     if (searchMode === 'bacon-law') {
       return
     }
 
+    searchRequestIdRef.current += 1
     setIsLoading(true)
     setErrorMessage(null)
-    setRoleVisibility({ ...DEFAULT_ROLE_VISIBILITY })
 
     try {
       if (searchMode === 'tv-film') {
         const { selection, result } = await findRandomCommonCastMatch()
+        lastCompletedSearchKeyRef.current = getAutoSearchKey('tv-film', selection.left, selection.right)
         setLeftTitle(selection.left.title)
         setRightTitle(selection.right.title)
         setLeftSelection(selection.left)
@@ -239,6 +245,7 @@ function App() {
         setBaconLawResult(null)
       } else {
         const { selection, result } = await findRandomCommonTitlesMatch()
+        lastCompletedSearchKeyRef.current = getAutoSearchKey('actor', selection.left, selection.right)
         setLeftTitle(selection.left.name)
         setRightTitle(selection.right.name)
         setLeftSelection(selection.left)
@@ -248,9 +255,8 @@ function App() {
         setBaconLawResult(null)
       }
     } catch (error) {
-      setCommonCastResult(null)
-      setCommonTitlesResult(null)
-      setBaconLawResult(null)
+      lastCompletedSearchKeyRef.current = null
+      clearResults()
       const message = error instanceof Error ? error.message : 'Something went wrong while generating a random match.'
       setErrorMessage(message)
     } finally {
@@ -258,66 +264,121 @@ function App() {
     }
   }
 
-  const activeResultExists =
-    searchMode === 'tv-film'
-      ? commonCastResult !== null
-      : searchMode === 'actor'
-        ? commonTitlesResult !== null
-        : baconLawResult !== null
+  useEffect(() => {
+    if (!activeSearchKey) {
+      searchRequestIdRef.current += 1
+      lastCompletedSearchKeyRef.current = null
+      setIsLoading(false)
+      setErrorMessage(null)
+      clearResults()
+      return
+    }
 
-  const rawSharedCount =
-    searchMode === 'tv-film' ? (commonCastResult?.sharedActors.length ?? 0) : (commonTitlesResult?.sharedTitles.length ?? 0)
+    if (lastCompletedSearchKeyRef.current === activeSearchKey) {
+      return
+    }
 
-  const shownSharedCount =
-    searchMode === 'tv-film' ? (filteredCastResult?.sharedActors.length ?? 0) : (commonTitlesResult?.sharedTitles.length ?? 0)
+    const requestId = searchRequestIdRef.current + 1
+    searchRequestIdRef.current = requestId
+    setIsLoading(true)
+    setErrorMessage(null)
+    clearResults()
 
-  const leftSummaryLabel =
-    searchMode === 'tv-film' ? commonCastResult?.left.media.title : commonTitlesResult?.left.person.name
-
-  const rightSummaryLabel =
-    searchMode === 'tv-film' ? commonCastResult?.right.media.title : commonTitlesResult?.right.person.name
-
-  const chipLabels =
-    searchMode === 'tv-film'
-      ? (filteredCastResult?.sharedActors ?? []).map((actor) => actor.name)
-      : (commonTitlesResult?.sharedTitles ?? []).map((title) => title.title)
-
-  const isCastModeFilterEmpty = searchMode === 'tv-film' && rawSharedCount > 0 && shownSharedCount === 0
-
-  const formContent =
-    searchMode === 'tv-film'
-      ? {
-          leftLabel: 'Movie / TV title 1',
-          rightLabel: 'Movie / TV title 2',
-          leftPlaceholder: 'Example: The Matrix',
-          rightPlaceholder: 'Example: John Wick',
-          submitLabel: 'Build Overlap Layout',
-          submitLoadingLabel: 'Matching Cast...',
+    const runSearch = async () => {
+      if (searchMode === 'tv-film' && isMediaSelection(leftSelection) && isMediaSelection(rightSelection)) {
+        const result = await findCommonCastFromMedia(leftSelection, rightSelection)
+        if (searchRequestIdRef.current !== requestId) {
+          return
         }
-      : {
-          leftLabel: 'Actor 1',
-          rightLabel: 'Actor 2',
-          leftPlaceholder: 'Example: Kelsey Grammer',
-          rightPlaceholder: 'Example: Peri Gilpin',
-          submitLabel: 'Build Overlap Layout',
-          submitLoadingLabel: 'Matching Titles...',
+        setCommonCastResult(result)
+      } else if (searchMode === 'actor' && isPersonSelection(leftSelection) && isPersonSelection(rightSelection)) {
+        const result = await findCommonTitlesFromPeople(leftSelection, rightSelection)
+        if (searchRequestIdRef.current !== requestId) {
+          return
         }
+        setCommonTitlesResult(result)
+      } else if (searchMode === 'bacon-law' && isPersonSelection(leftSelection)) {
+        const result = await findBaconConnectionFromPerson(leftSelection)
+        if (searchRequestIdRef.current !== requestId) {
+          return
+        }
+        setBaconLawResult(result)
+      } else {
+        return
+      }
 
-  const activeFormContent =
-    searchMode === 'bacon-law'
-      ? {
-          leftLabel: 'Actor',
-          rightLabel: '',
-          leftPlaceholder: 'Example: Carrie Fisher',
-          rightPlaceholder: '',
-          submitLabel: 'Find Degrees of Bacon',
-          submitLoadingLabel: 'Finding Degrees of Bacon...',
-          showRightInput: false,
-        }
-      : {
-          ...formContent,
-          showRightInput: true,
-        }
+      lastCompletedSearchKeyRef.current = activeSearchKey
+      setIsLoading(false)
+    }
+
+    runSearch().catch((error) => {
+      if (searchRequestIdRef.current !== requestId) {
+        return
+      }
+      lastCompletedSearchKeyRef.current = null
+      clearResults()
+      const message = error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.'
+      setErrorMessage(message)
+      setIsLoading(false)
+    })
+  }, [activeSearchKey, leftSelection, rightSelection, searchMode])
+
+  const resultsView = useMemo(() => {
+    if (searchMode === 'tv-film' && commonCastResult) {
+      return {
+        heading: `Results (${commonCastResult.sharedActors.length})`,
+        context: `Shared cast between ${commonCastResult.left.media.title} and ${commonCastResult.right.media.title}`,
+        emptyMessage: 'No overlapping actors were found for this pair.',
+        cards: commonCastResult.sharedActors.map<ResultGalleryCard>((actor) => ({
+          id: `actor-${actor.id}`,
+          title: actor.name,
+          subtitle: getRoleSummary(actor.leftCharacter, actor.rightCharacter),
+          detail: getRoleCategoryLabel(actor.roleCategory),
+          imagePath: actor.profilePath,
+          visual: 'person',
+        })),
+      }
+    }
+
+    if (searchMode === 'actor' && commonTitlesResult) {
+      return {
+        heading: `Results (${commonTitlesResult.sharedTitles.length})`,
+        context: `Shared titles between ${commonTitlesResult.left.person.name} and ${commonTitlesResult.right.person.name}`,
+        emptyMessage: 'No overlapping TV/film titles were found for this pair.',
+        cards: commonTitlesResult.sharedTitles.map<ResultGalleryCard>((title) => {
+          const subtitle = title.leftCharacter || title.rightCharacter
+            ? getRoleSummary(title.leftCharacter, title.rightCharacter)
+            : getMediaMeta(title.mediaType, title.releaseDate)
+
+          return {
+            id: `${title.mediaType}-${title.id}`,
+            title: title.title,
+            subtitle,
+            detail:
+              title.leftCharacter || title.rightCharacter
+                ? getMediaMeta(title.mediaType, title.releaseDate)
+                : undefined,
+            imagePath: title.posterPath,
+            visual: title.mediaType,
+          }
+        }),
+      }
+    }
+
+    if (searchMode === 'bacon-law' && baconLawResult) {
+      return {
+        heading: `Bacon Number ${baconLawResult.degree}`,
+        context:
+          baconLawResult.degree === 0
+            ? `${baconLawResult.actor.person.name} is Kevin Bacon.`
+            : `Shortest path from ${baconLawResult.actor.person.name} to Kevin Bacon`,
+        emptyMessage: 'No Bacon path was found.',
+        cards: buildBaconCards(baconLawResult),
+      }
+    }
+
+    return null
+  }, [baconLawResult, commonCastResult, commonTitlesResult, searchMode])
 
   const loadingMessage =
     searchMode === 'tv-film'
@@ -374,6 +435,31 @@ function App() {
           }
         : undefined
 
+  const activeFormContent =
+    searchMode === 'tv-film'
+      ? {
+          leftLabel: 'Movie / TV title 1',
+          rightLabel: 'Movie / TV title 2',
+          leftPlaceholder: 'Example: The Matrix',
+          rightPlaceholder: 'Example: John Wick',
+          showRightInput: true,
+        }
+      : searchMode === 'actor'
+        ? {
+            leftLabel: 'Actor 1',
+            rightLabel: 'Actor 2',
+            leftPlaceholder: 'Example: Kelsey Grammer',
+            rightPlaceholder: 'Example: Peri Gilpin',
+            showRightInput: true,
+          }
+        : {
+            leftLabel: 'Actor',
+            rightLabel: '',
+            leftPlaceholder: 'Example: Carrie Fisher',
+            rightPlaceholder: '',
+            showRightInput: false,
+          }
+
   return (
     <div className={`app-shell app-shell-${searchMode}`}>
       <div className="ambient-glow ambient-left" />
@@ -425,10 +511,10 @@ function App() {
           </div>
           <p className="panel-note">
             {searchMode === 'tv-film'
-              ? 'Compare two movies or series and surface every shared cast connection.'
+              ? 'Select two titles and shared cast will appear automatically.'
               : searchMode === 'actor'
-                ? 'Enter two actors to reveal every title they have both appeared in.'
-                : 'Enter one actor and trace the shortest client-side path back to Kevin Bacon.'}
+                ? 'Select two actors and common credits will load automatically.'
+                : 'Select one actor and the Kevin Bacon path will load automatically.'}
           </p>
 
           <CommonCastForm
@@ -439,14 +525,11 @@ function App() {
             rightLabel={activeFormContent.rightLabel}
             leftPlaceholder={activeFormContent.leftPlaceholder}
             rightPlaceholder={activeFormContent.rightPlaceholder}
-            submitLabel={activeFormContent.submitLabel}
-            submitLoadingLabel={activeFormContent.submitLoadingLabel}
             secondaryActionLabel={searchMode === 'bacon-law' ? undefined : 'Random Match'}
             leftAutocomplete={leftAutocomplete}
             rightAutocomplete={rightAutocomplete}
             onLeftTitleChange={handleLeftInputChange}
             onRightTitleChange={handleRightInputChange}
-            onSubmit={handleSubmit}
             onSecondaryAction={searchMode === 'bacon-law' ? undefined : handleRandomMatch}
             showRightInput={activeFormContent.showRightInput}
           />
@@ -455,103 +538,13 @@ function App() {
         {isLoading ? <p className="status status-loading">{loadingMessage}</p> : null}
         {errorMessage ? <p className="status status-error">{errorMessage}</p> : null}
 
-        {activeResultExists ? (
-          searchMode === 'bacon-law' && baconLawResult ? (
-            <section className="results panel panel-results">
-              <div className="results-headline">
-                <p className="results-kicker">Degrees of Bacon</p>
-                <h2>Connection path found</h2>
-              </div>
-              <div className="result-summary">
-                <div className="title-pill left-pill">{baconLawResult.actor.person.name}</div>
-                <div className="summary-meta">
-                  <span>{`Bacon number ${baconLawResult.degree}`}</span>
-                </div>
-                <div className="title-pill right-pill">{baconLawResult.kevinBacon.person.name}</div>
-              </div>
-
-              <BaconPathGraph result={baconLawResult} />
-            </section>
-          ) : (
-          <section className="results panel panel-results">
-            <div className="results-headline">
-              <p className="results-kicker">{searchMode === 'tv-film' ? 'Shared cast' : 'Shared credits'}</p>
-              <h2>{searchMode === 'tv-film' ? 'Overlap map' : 'Common filmography'}</h2>
-            </div>
-            <div className="result-summary">
-              <div className="title-pill left-pill">{leftSummaryLabel}</div>
-              <div className="summary-meta">
-                <span>
-                  {shownSharedCount !== rawSharedCount
-                    ? `${shownSharedCount} shown / ${rawSharedCount} shared`
-                    : `${rawSharedCount} shared ${searchMode === 'tv-film' ? 'actor(s)' : 'title(s)'}`}
-                </span>
-              </div>
-              <div className="title-pill right-pill">{rightSummaryLabel}</div>
-            </div>
-
-            {rawSharedCount > 0 ? (
-              <>
-                <div className="graph-controls">
-                  <label className="graph-control-label" htmlFor="node-spacing">
-                    Magnetic spread
-                  </label>
-                  <input
-                    id="node-spacing"
-                    className="graph-control-slider"
-                    type="range"
-                    min={0.8}
-                    max={2.7}
-                    step={0.1}
-                    value={nodeSpacing}
-                    onChange={(event) => setNodeSpacing(Number(event.target.value))}
-                  />
-                  <span className="graph-control-value">{nodeSpacing.toFixed(1)}x</span>
-                </div>
-
-                {searchMode === 'tv-film' ? (
-                  <div className="graph-legend" aria-label="Actor node color legend">
-                    {ROLE_LEGEND_ITEMS.map((item) => {
-                      const isActive = roleVisibility[item.category]
-                      return (
-                        <button
-                          key={item.category}
-                          type="button"
-                          aria-pressed={isActive}
-                          onClick={() => toggleRoleCategory(item.category)}
-                          className={`legend-item${isActive ? '' : ' legend-item-inactive'}`}
-                        >
-                          <span className={`legend-dot ${item.dotClassName}`} />
-                          {item.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : null}
-
-                <CommonCastGraph graphData={activeGraphData} nodeSpacing={nodeSpacing} />
-
-                {isCastModeFilterEmpty ? (
-                  <p className="status status-empty">All role categories are hidden. Toggle a legend pill back on.</p>
-                ) : (
-                  <div className="actor-list">
-                    {chipLabels.slice(0, 18).map((label, index) => (
-                      <span className="actor-chip" key={`${label}-${index}`}>
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="status status-empty">
-                {searchMode === 'tv-film'
-                  ? 'No overlapping actors were found for this pair.'
-                  : 'No overlapping TV/film titles were found for this pair.'}
-              </p>
-            )}
-          </section>
-          )
+        {resultsView ? (
+          <ResultsGallery
+            heading={resultsView.heading}
+            context={resultsView.context}
+            cards={resultsView.cards}
+            emptyMessage={resultsView.emptyMessage}
+          />
         ) : null}
       </main>
     </div>
