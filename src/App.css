@@ -1217,6 +1217,7 @@ input:focus-visible,
 
   .search-row-single {
     grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 36rem);
   }
 
   .search-row-plus {
