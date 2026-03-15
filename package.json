@@ -1,9 +1,9 @@
 {
-  "name": "wwit",
+  "name": "ag-movies",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://ww1999.github.io/wwit",
+  "homepage": "https://castlink.app",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

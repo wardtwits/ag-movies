@@ -6,7 +6,7 @@ const normalizeBase = (value: string): string => {
   return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`
 }
 
-const configuredPagesBase = normalizeBase(process.env.GITHUB_PAGES_BASE_PATH ?? 'wwit')
+const configuredPagesBase = normalizeBase(process.env.GITHUB_PAGES_BASE_PATH ?? '')
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
