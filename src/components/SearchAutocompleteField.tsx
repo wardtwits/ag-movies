@@ -116,7 +116,7 @@ export const SearchAutocompleteField = ({
   }
 
   return (
-    <div className="search-field">
+    <div className={`search-field${shouldShowDropdown ? ' search-field-open' : ''}`}>
       {selectedEntity ? (
         <div
           className="search-selected-shell"
