@@ -656,7 +656,9 @@ input:focus-visible,
 
 .result-card-image-shell {
   position: relative;
+  width: 54%;
   aspect-ratio: 2 / 3;
+  margin-inline: auto;
   border-radius: 1rem;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -724,7 +726,9 @@ input:focus-visible,
 }
 
 .result-skeleton-image {
+  width: 54%;
   aspect-ratio: 2 / 3;
+  margin-inline: auto;
   border-radius: 1rem;
   background: #e8eaed;
 }
@@ -1068,6 +1072,11 @@ input:focus-visible,
 
   .results-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .result-card-image-shell,
+  .result-skeleton-image {
+    width: 100%;
   }
 }
 
