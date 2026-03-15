@@ -184,6 +184,8 @@ function App() {
     [mode, primarySelection, secondarySelection],
   )
 
+  const isFilteringVisibleOnly = filterExtras && !showingHiddenExtras
+
   const filteredComparisonState = useMemo<ComparisonSearchState | null>(() => {
     if (!comparisonState) {
       return null
@@ -207,8 +209,8 @@ function App() {
       return null
     }
 
-    return filterExtras ? filteredComparisonState : comparisonState
-  }, [comparisonState, filterExtras, filteredComparisonState])
+    return isFilteringVisibleOnly ? filteredComparisonState : comparisonState
+  }, [comparisonState, filteredComparisonState, isFilteringVisibleOnly])
 
   const resultCards = useMemo(() => {
     if (!displayedComparisonState) {
@@ -223,17 +225,16 @@ function App() {
   const resultCount = getComparisonResultCount(displayedComparisonState)
 
   useEffect(() => {
-    if (mode === 'bacon' || !comparisonState || !filterExtras) {
+    if (mode === 'bacon' || !comparisonState || !filterExtras || showingHiddenExtras) {
       return
     }
 
     const allCount = getComparisonResultCount(comparisonState)
     const filteredCount = getComparisonResultCount(filteredComparisonState)
     if (allCount > 0 && filteredCount === 0) {
-      setFilterExtras(false)
       setShowingHiddenExtras(true)
     }
-  }, [comparisonState, filteredComparisonState, filterExtras, mode])
+  }, [comparisonState, filteredComparisonState, filterExtras, mode, showingHiddenExtras])
 
   const clearSearchResults = () => {
     setComparisonState(null)
@@ -478,7 +479,7 @@ function App() {
         <section className="search-panel">
           {mode !== 'bacon' ? (
             <FilterToggle
-              checked={filterExtras}
+              checked={isFilteringVisibleOnly}
               onChange={(checked) => {
                 setFilterExtras(checked)
                 setShowingHiddenExtras(false)
