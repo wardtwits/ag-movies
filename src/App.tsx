@@ -264,6 +264,8 @@ function App() {
   }, [displayedComparisonState])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
+  const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0
+  const shouldShowClearButton = mode !== 'bacon' && resultCount > 0
 
   useEffect(() => {
     if (mode === 'bacon' || !comparisonState || !filterExtras || showingHiddenExtras) {
@@ -519,7 +521,7 @@ function App() {
 
         <section className="search-panel">
           <div className="search-panel-toolbar">
-            {mode !== 'bacon' ? (
+            {shouldShowClearButton ? (
               <button
                 type="button"
                 className="clear-search-button"
@@ -528,7 +530,9 @@ function App() {
               >
                 Clear Both Fields
               </button>
-            ) : null}
+            ) : (
+              <p className="search-panel-helper-text">Find the links between actors, movies, and shows</p>
+            )}
           </div>
 
           <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
@@ -567,7 +571,7 @@ function App() {
             ) : null}
           </div>
 
-          {mode !== 'bacon' ? (
+          {shouldShowFilterToggle ? (
             <div className="search-panel-filter-row">
               <FilterToggle
                 checked={isFilteringVisibleOnly}

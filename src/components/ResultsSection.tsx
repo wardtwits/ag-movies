@@ -39,7 +39,7 @@ export const ResultsSection = ({
         </h2>
         {showingHiddenExtras ? (
           <div className="results-banner" role="status">
-            Showing hidden Talk Shows/Cameos due to 0 direct matches.
+            0 direct matches. Showing Talk Shows/Cameo matches.
           </div>
         ) : null}
       </div>
