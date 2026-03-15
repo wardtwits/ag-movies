@@ -257,7 +257,7 @@ const buildResultGroups = (featuredCards: ReturnType<typeof mapSharedActorToCard
 const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
   actors: 'Search first actor...',
   titles: 'Search first movie or show...',
-  bacon: 'Search an actor, or...',
+  bacon: 'Type in an actor, or...',
 }
 
 const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {

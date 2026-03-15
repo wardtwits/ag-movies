@@ -1223,6 +1223,14 @@ input:focus-visible,
     display: inline-flex;
   }
 
+  .bacon-chain-compact {
+    flex-wrap: nowrap;
+  }
+
+  .bacon-chain-compact .bacon-chain-segment {
+    flex-wrap: nowrap;
+  }
+
   .results-header {
     flex-direction: row;
     align-items: center;

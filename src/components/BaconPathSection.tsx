@@ -70,7 +70,11 @@ export const BaconPathSection = ({ isLoading, errorMessage, result }: BaconPathS
       </div>
 
       {result.steps.length ? (
-        <div className="bacon-chain" role="list" aria-label="Kevin Bacon connection path">
+        <div
+          className={`bacon-chain${result.degree < 3 ? ' bacon-chain-compact' : ''}`}
+          role="list"
+          aria-label="Kevin Bacon connection path"
+        >
           <a
             href={tmdbPersonHref(result.actor.person.id)}
             target="_blank"
