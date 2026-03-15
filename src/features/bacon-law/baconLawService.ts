@@ -56,6 +56,8 @@ const toPersonSummary = (member: CastMember): PersonSummary => ({
 
 const mediaKey = (credit: MediaCredit): string => `${credit.mediaType}-${credit.id}`
 
+const filterBaconCredits = (credits: MediaCredit[]): MediaCredit[] => credits.filter((credit) => credit.mediaType === 'movie')
+
 const scoreCredit = (credit: MediaCredit): number => {
   const orderScore = Math.max(0, 24 - Math.min(credit.order, 24))
   return orderScore * 2.2 + Math.log1p(credit.popularity) * 4.5 + Math.log1p(credit.voteCount)
@@ -86,15 +88,20 @@ const selectCastForExpansion = (
 const loadPersonWithCredits = async (person: PersonSummary): Promise<PersonWithCredits> =>
   getOrSetCachedPromise(personCreditsCache, person.id, async () => ({
     person,
-    credits: await fetchCreditsForPerson(person.id),
+    credits: filterBaconCredits(await fetchCreditsForPerson(person.id)),
   }))
 
 const loadKevinBacon = async (): Promise<PersonWithCredits> => {
   if (!kevinBaconPromise) {
-    kevinBaconPromise = resolveActorToCredits(KEVIN_BACON_QUERY).catch((error) => {
-      kevinBaconPromise = null
-      throw error
-    })
+    kevinBaconPromise = resolveActorToCredits(KEVIN_BACON_QUERY)
+      .then((kevinBacon) => ({
+        person: kevinBacon.person,
+        credits: filterBaconCredits(kevinBacon.credits),
+      }))
+      .catch((error) => {
+        kevinBaconPromise = null
+        throw error
+      })
   }
 
   return kevinBaconPromise
