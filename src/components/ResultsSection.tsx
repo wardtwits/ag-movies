@@ -1,4 +1,5 @@
 import { FilterToggle } from './FilterToggle'
+import { LinkIcon } from './LinkIcon'
 import { ResultCard, type ResultCardData } from './ResultCard'
 
 export interface ResultCardGroup {
@@ -47,14 +48,17 @@ export const ResultsSection = ({
   return (
     <section className="results-section" aria-live="polite">
       <div className="results-header">
-        <h2>
-          Results <span>({resultCount})</span>
-        </h2>
-        {showCopyResultsLink ? (
-          <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
-            {copyResultsLinkLabel}
-          </button>
-        ) : null}
+        <div className="results-header-top">
+          <h2>
+            Results <span>({resultCount})</span>
+          </h2>
+          {showCopyResultsLink ? (
+            <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
+              <LinkIcon className="action-link-icon" />
+              <span>{copyResultsLinkLabel}</span>
+            </button>
+          ) : null}
+        </div>
         {showFilterToggle ? (
           <div className="results-filter-row">
             <FilterToggle checked={filterChecked} onChange={onFilterChange} />

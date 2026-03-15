@@ -1,4 +1,5 @@
 import type { BaconLawResult } from '../features/bacon-law/types'
+import { LinkIcon } from './LinkIcon'
 
 const tmdbMovieHref = (mediaType: 'movie' | 'tv', id: number): string =>
   `https://www.themoviedb.org/${mediaType === 'tv' ? 'tv' : 'movie'}/${id}`
@@ -77,7 +78,8 @@ export const BaconPathSection = ({
       {showCopyResultsLink ? (
         <div className="bacon-share-row">
           <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
-            {copyResultsLinkLabel}
+            <LinkIcon className="action-link-icon" />
+            <span>{copyResultsLinkLabel}</span>
           </button>
         </div>
       ) : null}

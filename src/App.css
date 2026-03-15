@@ -174,21 +174,20 @@ input:focus-visible,
 }
 
 .clear-search-button {
-  min-height: 2.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
+  min-height: 2.75rem;
+  padding: 0.25rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--color-blue);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
   cursor: pointer;
 }
 
 .clear-search-button:hover:not(:disabled) {
-  border-color: var(--color-border-strong);
-  background: #f8fbff;
+  color: #1557b0;
+  text-decoration: underline;
 }
 
 .clear-search-button:disabled {
@@ -688,27 +687,41 @@ input:focus-visible,
   margin-bottom: 1.5rem;
 }
 
+.results-header-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
 .results-filter-row {
   align-self: flex-start;
 }
 
 .results-share-button {
-  align-self: flex-start;
-  min-height: 2.25rem;
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-blue);
-  font-size: 0.875rem;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.5rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-green);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .results-share-button:hover {
-  border-color: var(--color-border-strong);
-  background: #f8fbff;
+  color: #188038;
+  text-decoration: underline;
+}
+
+.action-link-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .results-header h2 {
@@ -1015,6 +1028,13 @@ input:focus-visible,
 }
 
 @media (max-width: 47.99rem) {
+  .results-header-top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
   .dialog-backdrop {
     padding: env(safe-area-inset-top) 0 0;
     align-items: stretch;
@@ -1275,12 +1295,6 @@ input:focus-visible,
 
   .bacon-chain-compact .bacon-chain-segment {
     flex-wrap: nowrap;
-  }
-
-  .results-header {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
   }
 
   .results-grid {
