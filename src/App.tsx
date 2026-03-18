@@ -383,7 +383,7 @@ function App() {
   }, [displayedComparisonState])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
-  const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0
+  const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0 && !showingHiddenExtras
   const shouldShowClearButton = mode !== 'bacon' && resultCount > 0
   const shouldShowCopyResultsLink =
     !isLoading &&
@@ -875,7 +875,7 @@ function App() {
         ) : null}
       </main>
 
-      <TmdbFooter />
+      {!aboutOpen && !howItWorksOpen ? <TmdbFooter /> : null}
 
       <HowItWorksDialog open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />

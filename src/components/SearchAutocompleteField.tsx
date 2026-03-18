@@ -1,4 +1,4 @@
-import { type ReactNode, useId, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useId, useMemo, useRef, useState } from 'react'
 import type { MediaTitle, PersonSummary } from '../domain/media'
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w92'
@@ -71,6 +71,14 @@ export const SearchAutocompleteField = ({
     trimmedValue.length >= minimumQueryLength &&
     (isLoading || suggestions.length > 0 || hasSearched)
 
+  const blurActiveInput = useCallback(() => {
+    inputRef.current?.blur()
+
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }, [])
+
   const dropdownContent = useMemo(() => {
     if (isLoading) {
       return <div className="search-dropdown-state">Searching TMDB…</div>
@@ -91,6 +99,7 @@ export const SearchAutocompleteField = ({
                 className="search-dropdown-option"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
+                  blurActiveInput()
                   onSelect(entity)
                   setIsFocused(false)
                 }}
@@ -108,9 +117,10 @@ export const SearchAutocompleteField = ({
         })}
       </ul>
     )
-  }, [inputKind, isLoading, listboxId, onSelect, suggestions, trimmedValue])
+  }, [blurActiveInput, inputKind, isLoading, listboxId, onSelect, suggestions, trimmedValue])
 
   const handleClear = () => {
+    blurActiveInput()
     onClearSelection()
     window.setTimeout(() => {
       inputRef.current?.focus()
@@ -165,6 +175,7 @@ export const SearchAutocompleteField = ({
           </span>
           <input
             ref={inputRef}
+            name={`${inputKind}-search`}
             value={value}
             onChange={(event) => onChange(event.target.value)}
             onFocus={() => setIsFocused(true)}
@@ -172,7 +183,17 @@ export const SearchAutocompleteField = ({
               window.setTimeout(() => setIsFocused(false), 100)
             }}
             placeholder={placeholder}
-            autoComplete="off"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            inputMode="search"
+            enterKeyHint="search"
+            data-form-type="other"
+            data-1p-ignore="true"
+            data-lpignore="true"
+            data-gramm="false"
+            data-ms-editor="false"
             aria-label={label}
             aria-autocomplete="list"
             aria-expanded={shouldShowDropdown}
