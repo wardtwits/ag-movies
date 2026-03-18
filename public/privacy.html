@@ -6,12 +6,14 @@
   <title>CastLink Privacy Policy</title>
   <style>
     :root {
-      --bg: #0b1020;
-      --panel: #121933;
-      --text: #eef2ff;
-      --muted: #b9c2e0;
-      --accent: #f5c15d;
-      --border: #273154;
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --text: #202124;
+      --muted: #5f6368;
+      --accent: #4285f4;
+      --accent-soft: #fff8e1;
+      --accent-border: #fbbc05;
+      --border: #dadce0;
     }
 
     * { box-sizing: border-box; }
@@ -19,12 +21,10 @@
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top, #15204a 0%, var(--bg) 50%),
-        var(--bg);
+      background: var(--bg);
       color: var(--text);
       line-height: 1.65;
-      padding: 32px 20px;
+      padding: 32px 20px 48px;
     }
 
     .container {
@@ -33,12 +33,11 @@
     }
 
     .card {
-      background: rgba(18, 25, 51, 0.92);
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 36px 28px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     h1 {
@@ -66,10 +65,10 @@
     }
 
     .notice {
-      border-left: 4px solid var(--accent);
+      border-left: 4px solid var(--accent-border);
       padding: 14px 16px;
       margin: 16px 0;
-      background: rgba(245, 193, 93, 0.08);
+      background: var(--accent-soft);
       border-radius: 10px;
     }
 
@@ -89,7 +88,18 @@
     }
 
     strong {
-      color: #ffffff;
+      color: var(--text);
+    }
+
+    @media (max-width: 47.99rem) {
+      body {
+        padding: 20px 16px 32px;
+      }
+
+      .card {
+        padding: 28px 20px;
+        border-radius: 16px;
+      }
     }
   </style>
 </head>
