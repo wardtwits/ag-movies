@@ -12,6 +12,9 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen }: AppNavProps) => {
       <button type="button" className="app-nav-link" onClick={onHowItWorksOpen}>
         How it Works
       </button>
+      <a className="app-nav-link" href="/privacy.html">
+        Privacy
+      </a>
     </nav>
   )
 }
