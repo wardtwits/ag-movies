@@ -802,14 +802,16 @@ input:focus-visible,
 
 .bacon-chain {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: center;
-  width: 100%;
-  min-height: 14.2rem;
+  width: fit-content;
+  min-height: 14.8rem;
   gap: var(--bacon-track-gap);
+  margin-inline: auto;
+  padding: 2.35rem 0.85rem 0.95rem;
 }
 
 .bacon-chain-arrow {
@@ -949,6 +951,65 @@ input:focus-visible,
   justify-content: center;
   min-height: 14.2rem;
   align-items: flex-end;
+}
+
+.bacon-filmstrip {
+  position: relative;
+  min-height: 14.8rem;
+  border-radius: 1.6rem;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(214, 188, 122, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(10, 13, 20, 0.98), rgba(6, 8, 12, 0.92));
+}
+
+.bacon-filmstrip::before {
+  content: '';
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 39%;
+  height: 20%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(247, 220, 154, 0.2), rgba(176, 141, 71, 0.14) 45%, transparent 78%);
+  opacity: 0.78;
+  filter: blur(1.15rem);
+}
+
+.bacon-filmstrip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%, transparent 76%, rgba(0, 0, 0, 0.18)),
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(4, 6, 11, 0.16) 100%);
+  pointer-events: none;
+}
+
+.bacon-track {
+  position: relative;
+  width: fit-content;
+  margin-inline: auto;
+  min-height: 14.8rem;
+}
+
+.bacon-reel {
+  position: absolute;
+  top: 31%;
+  left: calc(var(--bacon-endpoint-visual-size) * 0.6);
+  width: calc(100% - (var(--bacon-endpoint-visual-size) * 1.2));
+  height: 38%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.96;
+  filter:
+    saturate(1.04)
+    brightness(1.04)
+    drop-shadow(0 0.5rem 0.95rem rgba(0, 0, 0, 0.28));
+  pointer-events: none;
+  user-select: none;
 }
 
 .bacon-loading {
@@ -2395,39 +2456,26 @@ input:focus-visible,
     padding: 1.1rem 1.25rem 1rem;
   }
 
-  .bacon-chain {
-    width: fit-content;
-    max-width: none;
-    min-height: 14.8rem;
-    flex-wrap: nowrap;
-    justify-content: center;
-    align-items: flex-end;
-    gap: clamp(1rem, 1.75vw, 1.25rem);
-    margin-inline: auto;
-    padding: 0.35rem 0.9rem 0.45rem;
-    overflow: visible;
-    scrollbar-width: none;
+  .bacon-filmstrip {
+    min-height: 15.3rem;
   }
 
-  .bacon-chain::before {
-    content: '';
-    position: absolute;
-    left: calc(var(--bacon-endpoint-visual-size) * 0.56);
-    right: calc(var(--bacon-endpoint-visual-size) * 0.56);
-    top: 39%;
-    height: 3.8rem;
-    transform: translateY(-50%);
-    background: url('/images/film-roll.png') repeat-x center / auto 100%;
-    opacity: 0.94;
-    filter:
-      saturate(1.04)
-      brightness(1.06)
-      drop-shadow(0 0.45rem 0.9rem rgba(0, 0, 0, 0.28));
-    pointer-events: none;
+  .bacon-track {
+    min-height: 15.3rem;
   }
 
   .bacon-chain-arrow {
     display: none;
+  }
+
+  .bacon-chain {
+    max-width: none;
+    min-height: 15.3rem;
+    flex-wrap: nowrap;
+    gap: clamp(1rem, 1.75vw, 1.25rem);
+    padding: 2.25rem 0.9rem 0.9rem;
+    overflow: visible;
+    scrollbar-width: none;
   }
 
   .bacon-endpoint-only {
