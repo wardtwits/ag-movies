@@ -91,6 +91,8 @@ export const BaconPathSection = ({
     return null
   }
 
+  const finalActor = result.steps[result.steps.length - 1]?.toActor ?? result.actor.person
+
   return (
     <section className="bacon-section" aria-live="polite">
       <div className="bacon-header">
@@ -110,87 +112,105 @@ export const BaconPathSection = ({
       </div>
 
       {result.steps.length ? (
-        <div className="bacon-filmstrip">
-          <div className={`bacon-track${result.degree < 3 ? ' bacon-track-compact' : ''}`}>
-            <img src={FILM_ROLL_IMAGE_URL} alt="" className="bacon-reel" aria-hidden="true" />
-
-            <div
-              className={`bacon-chain${result.degree < 3 ? ' bacon-chain-compact' : ''}`}
-              role="list"
-              aria-label="Kevin Bacon connection path"
-            >
-              <a
-                href={tmdbPersonHref(result.actor.person.id)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bacon-person-node bacon-person-node-large"
-                role="listitem"
-              >
-                <span className="actor-spotlight-portrait-shell bacon-person-medallion">
-                  {getProfileImageUrl(result.actor.person.profilePath) ? (
-                    <img src={getProfileImageUrl(result.actor.person.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-                  ) : (
-                    <span className="actor-spotlight-fallback" aria-hidden="true">
-                      {getInitials(result.actor.person.name)}
-                    </span>
-                  )}
+        <div className="bacon-stage">
+          <a
+            href={tmdbPersonHref(result.actor.person.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bacon-person-node bacon-person-node-large bacon-stage-endpoint"
+            role="listitem"
+          >
+            <span className="actor-spotlight-portrait-shell bacon-person-medallion">
+              {getProfileImageUrl(result.actor.person.profilePath) ? (
+                <img src={getProfileImageUrl(result.actor.person.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+              ) : (
+                <span className="actor-spotlight-fallback" aria-hidden="true">
+                  {getInitials(result.actor.person.name)}
                 </span>
-                <span className="bacon-person-name">{result.actor.person.name}</span>
-              </a>
+              )}
+            </span>
+            <span className="bacon-person-name">{result.actor.person.name}</span>
+          </a>
 
-              {result.steps.map((step, index) => {
-                const isFinalStep = index === result.steps.length - 1
+          <div className="bacon-filmstrip">
+            <div className="bacon-track">
+              <img src={FILM_ROLL_IMAGE_URL} alt="" className="bacon-reel" aria-hidden="true" />
 
-                return (
-                  <Fragment key={`${step.media.mediaType}-${step.media.id}-${index}`}>
-                    <span className="bacon-chain-arrow" aria-hidden="true">
-                      →
-                    </span>
-                    <a
-                      href={tmdbMovieHref(step.media.mediaType, step.media.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bacon-media-node"
-                      role="listitem"
-                    >
-                      <span className="bacon-media-frame">
-                        {getPosterImageUrl(step.media.posterPath) ? (
-                          <img src={getPosterImageUrl(step.media.posterPath) ?? undefined} alt="" className="bacon-media-image" />
-                        ) : (
-                          <span className="bacon-media-fallback" aria-hidden="true">
-                            {getInitials(step.media.title)}
+              <div
+                className={`bacon-chain${result.degree < 3 ? ' bacon-chain-compact' : ''}`}
+                role="list"
+                aria-label="Kevin Bacon connection path"
+              >
+                {result.steps.map((step, index) => {
+                  const isFinalStep = index === result.steps.length - 1
+
+                  return (
+                    <Fragment key={`${step.media.mediaType}-${step.media.id}-${index}`}>
+                      <a
+                        href={tmdbMovieHref(step.media.mediaType, step.media.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bacon-media-node"
+                        role="listitem"
+                      >
+                        <span className="bacon-media-frame">
+                          {getPosterImageUrl(step.media.posterPath) ? (
+                            <img src={getPosterImageUrl(step.media.posterPath) ?? undefined} alt="" className="bacon-media-image" />
+                          ) : (
+                            <span className="bacon-media-fallback" aria-hidden="true">
+                              {getInitials(step.media.title)}
+                            </span>
+                          )}
+                        </span>
+                        <span className="bacon-media-title">{step.media.title}</span>
+                        <span className="bacon-media-meta">{getMediaMeta(step.media.mediaType, step.media.releaseDate)}</span>
+                      </a>
+
+                      {!isFinalStep ? (
+                        <a
+                          href={tmdbPersonHref(step.toActor.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bacon-person-node bacon-person-node-bridge"
+                          role="listitem"
+                        >
+                          <span className="actor-spotlight-portrait-shell bacon-person-medallion">
+                            {getProfileImageUrl(step.toActor.profilePath) ? (
+                              <img src={getProfileImageUrl(step.toActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+                            ) : (
+                              <span className="actor-spotlight-fallback" aria-hidden="true">
+                                {getInitials(step.toActor.name)}
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </span>
-                      <span className="bacon-media-title">{step.media.title}</span>
-                      <span className="bacon-media-meta">{getMediaMeta(step.media.mediaType, step.media.releaseDate)}</span>
-                    </a>
-                    <span className="bacon-chain-arrow" aria-hidden="true">
-                      →
-                    </span>
-                    <a
-                      href={tmdbPersonHref(step.toActor.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`bacon-person-node ${isFinalStep ? 'bacon-person-node-large' : 'bacon-person-node-bridge'}`}
-                      role="listitem"
-                    >
-                      <span className="actor-spotlight-portrait-shell bacon-person-medallion">
-                        {getProfileImageUrl(step.toActor.profilePath) ? (
-                          <img src={getProfileImageUrl(step.toActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-                        ) : (
-                          <span className="actor-spotlight-fallback" aria-hidden="true">
-                            {getInitials(step.toActor.name)}
-                          </span>
-                        )}
-                      </span>
-                      <span className="bacon-person-name">{step.toActor.name}</span>
-                    </a>
-                  </Fragment>
-                )
-              })}
+                          <span className="bacon-person-name">{step.toActor.name}</span>
+                        </a>
+                      ) : null}
+                    </Fragment>
+                  )
+                })}
+              </div>
             </div>
           </div>
+
+          <a
+            href={tmdbPersonHref(finalActor.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bacon-person-node bacon-person-node-large bacon-stage-endpoint"
+            role="listitem"
+          >
+            <span className="actor-spotlight-portrait-shell bacon-person-medallion">
+              {getProfileImageUrl(finalActor.profilePath) ? (
+                <img src={getProfileImageUrl(finalActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+              ) : (
+                <span className="actor-spotlight-fallback" aria-hidden="true">
+                  {getInitials(finalActor.name)}
+                </span>
+              )}
+            </span>
+            <span className="bacon-person-name">{finalActor.name}</span>
+          </a>
         </div>
       ) : (
         <div className="bacon-endpoint-only">
