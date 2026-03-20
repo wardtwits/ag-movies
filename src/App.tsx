@@ -355,6 +355,9 @@ const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
 
 const SHOW_RANDOM_MATCH = false
 
+const easeInOutCubic = (progress: number): number =>
+  progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
 function App() {
   const [mode, setMode] = useState<SearchMode>('actors')
   const [primaryQuery, setPrimaryQuery] = useState('')
@@ -605,12 +608,39 @@ function App() {
 
     const prefersReducedMotion =
       typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const frameId = window.requestAnimationFrame(() => {
-      target.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'start',
-      })
-    })
+    let frameId = 0
+
+    const startScroll = () => {
+      const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0
+      const startY = window.scrollY
+      const targetY = Math.max(0, target.getBoundingClientRect().top + startY - scrollMarginTop)
+
+      if (prefersReducedMotion || Math.abs(targetY - startY) < 8) {
+        window.scrollTo({ top: targetY, behavior: 'auto' })
+        return
+      }
+
+      const distance = targetY - startY
+      const duration = Math.min(1100, Math.max(760, Math.abs(distance) * 0.65))
+      const animationStart = window.performance.now()
+
+      const step = (timestamp: number) => {
+        const progress = Math.min(1, (timestamp - animationStart) / duration)
+        const easedProgress = easeInOutCubic(progress)
+        window.scrollTo({
+          top: startY + distance * easedProgress,
+          behavior: 'auto',
+        })
+
+        if (progress < 1) {
+          frameId = window.requestAnimationFrame(step)
+        }
+      }
+
+      frameId = window.requestAnimationFrame(step)
+    }
+
+    frameId = window.requestAnimationFrame(startScroll)
 
     return () => {
       window.cancelAnimationFrame(frameId)
@@ -994,6 +1024,19 @@ function App() {
     </div>
   )
 
+  const clearSelectionButton = (
+    <button
+      type="button"
+      className={`clear-search-button clear-search-button-inline${shouldShowClearButton ? '' : ' clear-search-button-hidden'}`}
+      onClick={shouldShowClearButton ? resetSelectionsAndResults : undefined}
+      disabled={!canClearSearchFields || !shouldShowClearButton}
+      aria-hidden={!shouldShowClearButton}
+      tabIndex={shouldShowClearButton ? 0 : -1}
+    >
+      Clear Selection
+    </button>
+  )
+
   return (
     <div className="app-shell">
       <AppNav onAboutOpen={() => setAboutOpen(true)} onHowItWorksOpen={() => setHowItWorksOpen(true)} />
@@ -1003,37 +1046,34 @@ function App() {
           <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
         <section className="search-panel">
-          {shouldShowClearButton ? (
-            <div className="search-panel-primary search-panel-primary-dual search-panel-primary-with-clear">
-              {searchFields}
-              <div className="search-panel-toolbar search-panel-toolbar-inline">
-                <button
-                  type="button"
-                  className="clear-search-button clear-search-button-inline"
-                  onClick={resetSelectionsAndResults}
-                  disabled={!canClearSearchFields}
+          {mode !== 'bacon' ? (
+            <>
+              {!shouldShowClearButton ? (
+                <div className="search-panel-toolbar search-panel-toolbar-helper">
+                  <p className="search-panel-helper-text">{helperText}</p>
+                </div>
+              ) : null}
+
+              <div
+                className={`search-panel-primary search-panel-primary-dual search-panel-primary-with-clear${
+                  shouldShowClearButton ? '' : ' search-panel-primary-with-reserved-clear'
+                }`}
+              >
+                {searchFields}
+                <div
+                  className={`search-panel-toolbar search-panel-toolbar-inline${
+                    shouldShowClearButton ? '' : ' search-panel-toolbar-inline-reserved'
+                  }`}
                 >
-                  Clear Selection
-                </button>
+                  {clearSelectionButton}
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <>
-              <div className="search-panel-toolbar">
-                {shouldShowClearButton ? (
-                  <button
-                    type="button"
-                    className="clear-search-button"
-                    onClick={resetSelectionsAndResults}
-                    disabled={!canClearSearchFields}
-                  >
-                    Clear Selection
-                  </button>
-                ) : (
-                  <p className="search-panel-helper-text">{helperText}</p>
-                )}
+              <div className="search-panel-toolbar search-panel-toolbar-helper">
+                <p className="search-panel-helper-text">{helperText}</p>
               </div>
-
               {searchFields}
             </>
           )}
@@ -1046,22 +1086,21 @@ function App() {
               </div>
             ) : null}
 
-            {mode === 'bacon' ? (
-              <div className="results-scroll-anchor" ref={resultsScrollTargetRef}>
-                <BaconPathSection
-                  isLoading={isLoading}
-                  errorMessage={errorMessage}
-                  result={baconResult}
-                  showCopyResultsLink={shouldShowCopyResultsLink}
-                  copyResultsLinkLabel={copyResultsLinkLabel}
-                  onCopyResultsLink={handleCopyResultsLink}
-                />
-              </div>
-            ) : null}
           </section>
         </section>
 
-        {mode !== 'bacon' ? (
+        {mode === 'bacon' ? (
+          <div className="results-scroll-anchor" ref={resultsScrollTargetRef}>
+            <BaconPathSection
+              isLoading={isLoading}
+              errorMessage={errorMessage}
+              result={baconResult}
+              showCopyResultsLink={shouldShowCopyResultsLink}
+              copyResultsLinkLabel={copyResultsLinkLabel}
+              onCopyResultsLink={handleCopyResultsLink}
+            />
+          </div>
+        ) : (
           <div className="results-scroll-anchor" ref={resultsScrollTargetRef}>
             <ResultsSection
               hasSearched={hasSearched}
@@ -1102,7 +1141,7 @@ function App() {
               onCopyResultsLink={handleCopyResultsLink}
             />
           </div>
-        ) : null}
+        )}
       </main>
 
       {!aboutOpen && !howItWorksOpen ? <TmdbFooter /> : null}

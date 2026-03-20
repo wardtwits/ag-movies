@@ -3,6 +3,7 @@ import type { ResultCardData } from './ResultCard'
 
 const POSTER_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w342'
 const PROFILE_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w300'
+const FILM_ROLL_IMAGE_URL = '/images/film-roll.png'
 
 interface TitleConnectionSpotlightProps {
   leftTitle: MediaTitle
@@ -63,40 +64,7 @@ export const TitleConnectionSpotlight = ({ leftTitle, rightTitle, actors }: Titl
 
         <div className="title-spotlight-filmstrip">
           <div className="title-spotlight-filmstrip-label">Top-Billed Shared Cast</div>
-          <svg viewBox="0 0 100 30" className="title-spotlight-reel" aria-hidden="true" preserveAspectRatio="none">
-            <rect className="title-spotlight-reel-shadow" x="2" y="11.1" width="96" height="13.8" rx="3.4" />
-            <rect className="title-spotlight-reel-body" x="2" y="12" width="96" height="12" rx="3" />
-            <rect className="title-spotlight-reel-sheen" x="2" y="12.4" width="96" height="3.4" rx="2" />
-            <line className="title-spotlight-reel-edge" x1="3.5" y1="12.7" x2="96.5" y2="12.7" />
-            <line className="title-spotlight-reel-edge" x1="3.5" y1="23.3" x2="96.5" y2="23.3" />
-            <line className="title-spotlight-reel-lane" x1="4.5" y1="18" x2="95.5" y2="18" />
-            <g className="title-spotlight-reel-frames">
-              <line x1="18.25" y1="13.35" x2="18.25" y2="22.65" />
-              <line x1="34.75" y1="13.35" x2="34.75" y2="22.65" />
-              <line x1="50" y1="13.35" x2="50" y2="22.65" />
-              <line x1="65.25" y1="13.35" x2="65.25" y2="22.65" />
-              <line x1="81.75" y1="13.35" x2="81.75" y2="22.65" />
-            </g>
-            <g className="title-spotlight-reel-holes">
-              <rect x="6.8" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="17.7" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="28.6" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="39.5" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="50.4" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="61.3" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="72.2" y="13.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="83.1" y="13.7" width="5.2" height="1.6" rx="0.22" />
-
-              <rect x="6.8" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="17.7" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="28.6" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="39.5" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="50.4" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="61.3" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="72.2" y="20.7" width="5.2" height="1.6" rx="0.22" />
-              <rect x="83.1" y="20.7" width="5.2" height="1.6" rx="0.22" />
-            </g>
-          </svg>
+          <img src={FILM_ROLL_IMAGE_URL} alt="" className="title-spotlight-reel" aria-hidden="true" />
 
           <div className="title-spotlight-actors" style={{ gridTemplateColumns: `repeat(${actors.length}, minmax(0, 1fr))` }}>
             {actors.map((actor) => (
