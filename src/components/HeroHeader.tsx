@@ -17,7 +17,7 @@ export const HeroHeader = ({ mode, onModeChange }: HeroHeaderProps) => {
       <div className="hero-copy">
         <p className="hero-eyebrow">Cinematic Connections</p>
         <h1 className="brand-wordmark" translate="no" aria-label="CastLink">
-          CastLink
+          Cast<span className="brand-wordmark-link">Link</span>
         </h1>
       </div>
 

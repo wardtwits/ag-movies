@@ -57,9 +57,16 @@ export const ResultsSection = ({
     <section className={`results-section${sectionClassName ? ` ${sectionClassName}` : ''}`} aria-live="polite">
       <div className="results-header">
         <div className="results-header-top">
-          <h2>
-            Results <span>({resultCount})</span>
-          </h2>
+          <div className="results-header-main">
+            <h2>
+              Results <span>({resultCount})</span>
+            </h2>
+            {showFilterToggle ? (
+              <div className="results-filter-row">
+                <FilterToggle checked={filterChecked} onChange={onFilterChange} />
+              </div>
+            ) : null}
+          </div>
           {showCopyResultsLink ? (
             <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
               <LinkIcon className="action-link-icon" />
@@ -67,11 +74,6 @@ export const ResultsSection = ({
             </button>
           ) : null}
         </div>
-        {showFilterToggle ? (
-          <div className="results-filter-row">
-            <FilterToggle checked={filterChecked} onChange={onFilterChange} />
-          </div>
-        ) : null}
         {showingHiddenExtras ? (
           <div className="results-banner" role="status">
             0 direct matches. Showing Talk Shows/Cameo matches.

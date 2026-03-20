@@ -40,6 +40,8 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
 
   return (
     <section className="actor-spotlight" aria-label={`Shared titles for ${leftActor.name} and ${rightActor.name}`}>
+      <div className="actor-spotlight-filmstrip-label">Shared Films &amp; Shows</div>
+
       <div className="actor-spotlight-header">
         <p className="actor-spotlight-pairing">
           {leftActor.name} + {rightActor.name}
@@ -61,7 +63,6 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
         </div>
 
         <div className="actor-spotlight-filmstrip">
-          <div className="actor-spotlight-filmstrip-label">Shared Films &amp; Shows</div>
           <svg viewBox="0 0 100 30" className="actor-spotlight-reel" aria-hidden="true" preserveAspectRatio="none">
             <path className="actor-spotlight-reel-shadow" d={reelRibbonPath} />
             <path className="actor-spotlight-reel-body" d={reelRibbonPath} />

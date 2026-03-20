@@ -369,12 +369,15 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [comparisonState, setComparisonState] = useState<ComparisonSearchState | null>(null)
   const [baconResult, setBaconResult] = useState<BaconLawResult | null>(null)
+  const [revealedResultToken, setRevealedResultToken] = useState(0)
   const [shareCopyState, setShareCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const [aboutOpen, setAboutOpen] = useState(false)
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const searchRequestIdRef = useRef(0)
   const lastCompletedSearchKeyRef = useRef<string | null>(null)
   const shareCopyResetTimeoutRef = useRef<number | null>(null)
+  const resultsScrollTargetRef = useRef<HTMLDivElement | null>(null)
+  const lastScrolledResultTokenRef = useRef(0)
 
   const primaryMediaAutocomplete = useAutocompleteSuggestions(primaryQuery, {
     enabled: mode === 'titles',
@@ -531,7 +534,7 @@ function App() {
     shareCopyState === 'copied' ? 'Copied' : shareCopyState === 'error' ? 'Unable to copy' : 'Copy Results Link'
   const helperText =
     mode === 'actors'
-      ? 'Choose two performers to uncover the titles that connect them.'
+      ? 'Comapre two performers to uncover the titles that connect them.'
       : mode === 'titles'
         ? 'Compare two movies or shows to reveal the cast they share.'
         : 'Trace a performer back to Kevin Bacon through shared screen credits.'
@@ -579,7 +582,40 @@ function App() {
     setHasSearched(Boolean(shareSnapshot.comparisonState || shareSnapshot.baconResult))
     setIsLoading(false)
     setErrorMessage(null)
+    if (shareSnapshot.comparisonState || shareSnapshot.baconResult) {
+      setRevealedResultToken((token) => token + 1)
+    }
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading || revealedResultToken === 0) {
+      return
+    }
+
+    if (lastScrolledResultTokenRef.current === revealedResultToken) {
+      return
+    }
+
+    const target = resultsScrollTargetRef.current
+    if (!target) {
+      return
+    }
+
+    lastScrolledResultTokenRef.current = revealedResultToken
+
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const frameId = window.requestAnimationFrame(() => {
+      target.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [isLoading, revealedResultToken])
 
   useEffect(() => {
     if (mode === 'bacon' || !comparisonState || !filterExtras || showingHiddenExtras) {
@@ -745,6 +781,7 @@ function App() {
         setSecondaryQuery(selection.right.title)
         setComparisonState({ kind: 'titles', result })
         lastCompletedSearchKeyRef.current = getActiveSearchKey('titles', selection.left, selection.right)
+        setRevealedResultToken((token) => token + 1)
       } else {
         const { selection, result } = await findRandomCommonTitlesMatch()
         if (searchRequestIdRef.current !== requestId) {
@@ -757,6 +794,7 @@ function App() {
         setSecondaryQuery(selection.right.name)
         setComparisonState({ kind: 'actors', result })
         lastCompletedSearchKeyRef.current = getActiveSearchKey('actors', selection.left, selection.right)
+        setRevealedResultToken((token) => token + 1)
       }
     } catch (error) {
       if (searchRequestIdRef.current !== requestId) {
@@ -764,6 +802,7 @@ function App() {
       }
       setErrorMessage(error instanceof Error ? error.message : 'Unable to create a random match.')
       lastCompletedSearchKeyRef.current = null
+      setRevealedResultToken((token) => token + 1)
     } finally {
       if (searchRequestIdRef.current === requestId) {
         setIsLoading(false)
@@ -812,6 +851,7 @@ function App() {
       setErrorMessage(duplicateSelectionMessage)
       setShowingHiddenExtras(false)
       clearSearchResults()
+      setRevealedResultToken((token) => token + 1)
       return
     }
 
@@ -852,6 +892,7 @@ function App() {
 
       lastCompletedSearchKeyRef.current = activeSearchKey
       setIsLoading(false)
+      setRevealedResultToken((token) => token + 1)
     }
 
     runSearch().catch((error) => {
@@ -863,6 +904,7 @@ function App() {
       clearSearchResults()
       setErrorMessage(error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.')
       setIsLoading(false)
+      setRevealedResultToken((token) => token + 1)
     })
   }, [activeSearchKey, mode, primarySelection, secondarySelection])
 
@@ -1005,57 +1047,61 @@ function App() {
             ) : null}
 
             {mode === 'bacon' ? (
-              <BaconPathSection
-                isLoading={isLoading}
-                errorMessage={errorMessage}
-                result={baconResult}
-                showCopyResultsLink={shouldShowCopyResultsLink}
-                copyResultsLinkLabel={copyResultsLinkLabel}
-                onCopyResultsLink={handleCopyResultsLink}
-              />
+              <div className="results-scroll-anchor" ref={resultsScrollTargetRef}>
+                <BaconPathSection
+                  isLoading={isLoading}
+                  errorMessage={errorMessage}
+                  result={baconResult}
+                  showCopyResultsLink={shouldShowCopyResultsLink}
+                  copyResultsLinkLabel={copyResultsLinkLabel}
+                  onCopyResultsLink={handleCopyResultsLink}
+                />
+              </div>
             ) : null}
           </section>
         </section>
 
         {mode !== 'bacon' ? (
-          <ResultsSection
-            hasSearched={hasSearched}
-            isLoading={isLoading}
-            resultCount={resultCount}
-            groups={resultGroups}
-            sectionClassName={mode === 'titles' ? 'results-section-titles' : undefined}
-            spotlight={
-              mode === 'actors' && actorSpotlight ? (
-                <ActorConnectionSpotlight
-                  leftActor={actorSpotlight.leftActor}
-                  rightActor={actorSpotlight.rightActor}
-                  titles={actorSpotlight.titles}
-                />
-              ) : mode === 'titles' && titleSpotlight ? (
-                <TitleConnectionSpotlight
-                  leftTitle={titleSpotlight.leftTitle}
-                  rightTitle={titleSpotlight.rightTitle}
-                  actors={titleSpotlight.actors}
-                />
-              ) : undefined
-            }
-            emptyDescription={
-              mode === 'actors'
-                ? 'Try searching for different actors to see shared titles.'
-                : 'Try searching for different titles to see overlapping cast.'
-            }
-            errorMessage={errorMessage}
-            showingHiddenExtras={showingHiddenExtras}
-            showFilterToggle={shouldShowFilterToggle}
-            filterChecked={isFilteringVisibleOnly}
-            onFilterChange={(checked) => {
-              setFilterExtras(checked)
-              setShowingHiddenExtras(false)
-            }}
-            showCopyResultsLink={shouldShowCopyResultsLink}
-            copyResultsLinkLabel={copyResultsLinkLabel}
-            onCopyResultsLink={handleCopyResultsLink}
-          />
+          <div className="results-scroll-anchor" ref={resultsScrollTargetRef}>
+            <ResultsSection
+              hasSearched={hasSearched}
+              isLoading={isLoading}
+              resultCount={resultCount}
+              groups={resultGroups}
+              sectionClassName={mode === 'titles' ? 'results-section-titles' : undefined}
+              spotlight={
+                mode === 'actors' && actorSpotlight ? (
+                  <ActorConnectionSpotlight
+                    leftActor={actorSpotlight.leftActor}
+                    rightActor={actorSpotlight.rightActor}
+                    titles={actorSpotlight.titles}
+                  />
+                ) : mode === 'titles' && titleSpotlight ? (
+                  <TitleConnectionSpotlight
+                    leftTitle={titleSpotlight.leftTitle}
+                    rightTitle={titleSpotlight.rightTitle}
+                    actors={titleSpotlight.actors}
+                  />
+                ) : undefined
+              }
+              emptyDescription={
+                mode === 'actors'
+                  ? 'Try searching for different actors to see shared titles.'
+                  : 'Try searching for different titles to see overlapping cast.'
+              }
+              errorMessage={errorMessage}
+              showingHiddenExtras={showingHiddenExtras}
+              showFilterToggle={shouldShowFilterToggle}
+              filterChecked={isFilteringVisibleOnly}
+              onFilterChange={(checked) => {
+                setFilterExtras(checked)
+                setShowingHiddenExtras(false)
+              }}
+              showCopyResultsLink={shouldShowCopyResultsLink}
+              copyResultsLinkLabel={copyResultsLinkLabel}
+              onCopyResultsLink={handleCopyResultsLink}
+            />
+          </div>
         ) : null}
       </main>
 
