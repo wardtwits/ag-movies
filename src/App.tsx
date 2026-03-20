@@ -8,6 +8,7 @@ import { HowItWorksDialog } from './components/HowItWorksDialog'
 import type { ResultCardData } from './components/ResultCard'
 import { ResultsSection, type ResultCardGroup } from './components/ResultsSection'
 import { SearchAutocompleteField } from './components/SearchAutocompleteField'
+import { TitleConnectionSpotlight } from './components/TitleConnectionSpotlight'
 import { TmdbFooter } from './components/TmdbFooter'
 import { isStarBillingOrder } from './domain/billing'
 import type { MediaTitle, PersonSummary } from './domain/media'
@@ -47,11 +48,18 @@ type SearchSelection = MediaTitle | PersonSummary
 type ComparisonSearchState = ShareComparisonState
 type SpotlightMetaLabel = 'Most Popular' | 'Earliest' | 'Most Recent'
 type ActorSpotlightTitleCard = ResultCardData & { metaLabel?: SpotlightMetaLabel }
+type TitleSpotlightActorCard = Pick<ResultCardData, 'id' | 'title' | 'subtitle' | 'href' | 'imagePath'>
 
 interface ActorSpotlightData {
   leftActor: PersonSummary
   rightActor: PersonSummary
   titles: ActorSpotlightTitleCard[]
+}
+
+interface TitleSpotlightData {
+  leftTitle: MediaTitle
+  rightTitle: MediaTitle
+  actors: TitleSpotlightActorCard[]
 }
 
 const isMediaSelection = (selection: SearchSelection | null): selection is MediaTitle =>
@@ -141,6 +149,16 @@ const mapSharedTitleToCard = (title: SharedTitle) => ({
 })
 
 const getSharedTitleKey = (title: SharedTitle): string => `${title.mediaType}-${title.id}`
+const compareImageAvailability = (leftPath?: string | null, rightPath?: string | null): number => {
+  const leftHasImage = Boolean(leftPath)
+  const rightHasImage = Boolean(rightPath)
+
+  if (leftHasImage === rightHasImage) {
+    return 0
+  }
+
+  return leftHasImage ? -1 : 1
+}
 
 const compareTitlesByPopularity = (left: SharedTitle, right: SharedTitle): number => {
   if (right.popularity !== left.popularity) {
@@ -152,6 +170,15 @@ const compareTitlesByPopularity = (left: SharedTitle, right: SharedTitle): numbe
   }
 
   return left.title.localeCompare(right.title)
+}
+
+const compareTitlesForResults = (left: SharedTitle, right: SharedTitle): number => {
+  const imageDelta = compareImageAvailability(left.posterPath, right.posterPath)
+  if (imageDelta !== 0) {
+    return imageDelta
+  }
+
+  return compareTitlesByPopularity(left, right)
 }
 
 const compareTitlesByEarliestRelease = (left: SharedTitle, right: SharedTitle): number => {
@@ -260,8 +287,49 @@ const mapSharedActorToCard = (actor: SharedActor) => ({
 })
 
 const getBestBillingOrder = (actor: SharedActor): number => Math.min(actor.leftOrder, actor.rightOrder)
+const getRoleCategoryPriority = (actor: SharedActor): number =>
+  actor.roleCategory === 'star-both' ? 0 : actor.roleCategory === 'mixed' ? 1 : 2
+
+const compareFeaturedActorsForSpotlight = (left: SharedActor, right: SharedActor): number => {
+  const roleCategoryDelta = getRoleCategoryPriority(left) - getRoleCategoryPriority(right)
+  if (roleCategoryDelta !== 0) {
+    return roleCategoryDelta
+  }
+
+  const billingDelta = getBestBillingOrder(left) - getBestBillingOrder(right)
+  if (billingDelta !== 0) {
+    return billingDelta
+  }
+
+  if (right.popularity !== left.popularity) {
+    return right.popularity - left.popularity
+  }
+
+  return left.name.localeCompare(right.name)
+}
+
+const buildTitleSpotlightActors = (actors: SharedActor[]): TitleSpotlightActorCard[] =>
+  [...actors].sort(compareFeaturedActorsForSpotlight).slice(0, 4).map(mapSharedActorToCard)
+
+const compareFeaturedActorsForResults = (left: SharedActor, right: SharedActor): number => {
+  const imageDelta = compareImageAvailability(left.profilePath, right.profilePath)
+  if (imageDelta !== 0) {
+    return imageDelta
+  }
+
+  if (right.popularity !== left.popularity) {
+    return right.popularity - left.popularity
+  }
+
+  return left.name.localeCompare(right.name)
+}
 
 const compareExtraActorsForTitles = (left: SharedActor, right: SharedActor): number => {
+  const imageDelta = compareImageAvailability(left.profilePath, right.profilePath)
+  if (imageDelta !== 0) {
+    return imageDelta
+  }
+
   const billingDelta = getBestBillingOrder(left) - getBestBillingOrder(right)
   if (billingDelta !== 0) {
     return billingDelta
@@ -275,14 +343,14 @@ const compareExtraActorsForTitles = (left: SharedActor, right: SharedActor): num
 }
 
 const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
-  actors: 'Actor A',
-  titles: 'Title A',
+  actors: 'Search Actor 1',
+  titles: 'Search Title 1',
   bacon: 'Enter an actor name',
 }
 
 const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
-  actors: 'Actor B',
-  titles: 'Title B',
+  actors: 'Search Actor 2',
+  titles: 'Search Title 2',
 }
 
 const SHOW_RANDOM_MATCH = false
@@ -381,13 +449,31 @@ function App() {
     }
   }, [displayedComparisonState])
 
+  const titleSpotlight = useMemo<TitleSpotlightData | null>(() => {
+    if (!displayedComparisonState || displayedComparisonState.kind !== 'titles') {
+      return null
+    }
+
+    const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
+    const actors = buildTitleSpotlightActors(featuredActors)
+    if (!actors.length) {
+      return null
+    }
+
+    return {
+      leftTitle: displayedComparisonState.result.left.media,
+      rightTitle: displayedComparisonState.result.right.media,
+      actors,
+    }
+  }, [displayedComparisonState])
+
   const resultGroups = useMemo<ResultCardGroup[]>(() => {
     if (!displayedComparisonState) {
       return []
     }
 
     if (displayedComparisonState.kind === 'actors') {
-      const sortedTitles = [...displayedComparisonState.result.sharedTitles].sort(compareTitlesByPopularity)
+      const sortedTitles = [...displayedComparisonState.result.sharedTitles].sort(compareTitlesForResults)
       const spotlightKeys = new Set(actorSpotlight?.titles.map((title) => title.id) ?? [])
       const remainingCards = sortedTitles
         .filter((title) => !spotlightKeys.has(getSharedTitleKey(title)))
@@ -404,18 +490,22 @@ function App() {
         : []
     }
 
-    const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
+    const featuredActors = displayedComparisonState.result.sharedActors
+      .filter((actor) => actor.roleCategory !== 'extra-both')
+      .sort(compareFeaturedActorsForResults)
+    const spotlightActorKeys = new Set(titleSpotlight?.actors.map((actor) => actor.id) ?? [])
+    const remainingFeaturedActors = featuredActors.filter((actor) => !spotlightActorKeys.has(`person-${actor.id}`))
     const extraActors = displayedComparisonState.result.sharedActors
       .filter((actor) => actor.roleCategory === 'extra-both')
       .sort(compareExtraActorsForTitles)
 
     const groups: ResultCardGroup[] = []
 
-    if (featuredActors.length) {
+    if (remainingFeaturedActors.length) {
       groups.push({
         id: 'shared-cast',
-        title: 'Top-Billed Shared Cast',
-        cards: featuredActors.map(mapSharedActorToCard),
+        title: titleSpotlight ? 'More Top-Billed Shared Cast' : 'Top-Billed Shared Cast',
+        cards: remainingFeaturedActors.map(mapSharedActorToCard),
       })
     }
 
@@ -428,7 +518,7 @@ function App() {
     }
 
     return groups
-  }, [actorSpotlight, displayedComparisonState])
+  }, [actorSpotlight, displayedComparisonState, titleSpotlight])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
   const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0 && !showingHiddenExtras
@@ -933,12 +1023,19 @@ function App() {
             isLoading={isLoading}
             resultCount={resultCount}
             groups={resultGroups}
+            sectionClassName={mode === 'titles' ? 'results-section-titles' : undefined}
             spotlight={
               mode === 'actors' && actorSpotlight ? (
                 <ActorConnectionSpotlight
                   leftActor={actorSpotlight.leftActor}
                   rightActor={actorSpotlight.rightActor}
                   titles={actorSpotlight.titles}
+                />
+              ) : mode === 'titles' && titleSpotlight ? (
+                <TitleConnectionSpotlight
+                  leftTitle={titleSpotlight.leftTitle}
+                  rightTitle={titleSpotlight.rightTitle}
+                  actors={titleSpotlight.actors}
                 />
               ) : undefined
             }

@@ -15,6 +15,7 @@ interface ResultsSectionProps {
   resultCount: number
   groups: ResultCardGroup[]
   spotlight?: ReactNode
+  sectionClassName?: string
   emptyDescription: string
   errorMessage: string | null
   showingHiddenExtras: boolean
@@ -34,6 +35,7 @@ export const ResultsSection = ({
   resultCount,
   groups,
   spotlight,
+  sectionClassName,
   emptyDescription,
   errorMessage,
   showingHiddenExtras,
@@ -52,7 +54,7 @@ export const ResultsSection = ({
   const hasRenderableContent = Boolean(spotlight) || hasRenderableGroups
 
   return (
-    <section className="results-section" aria-live="polite">
+    <section className={`results-section${sectionClassName ? ` ${sectionClassName}` : ''}`} aria-live="polite">
       <div className="results-header">
         <div className="results-header-top">
           <h2>

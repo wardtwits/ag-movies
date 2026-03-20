@@ -1402,6 +1402,262 @@ input:focus-visible,
   text-align: center;
 }
 
+.title-spotlight {
+  display: grid;
+  gap: 1.15rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(162, 188, 215, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(16, 22, 33, 0.92), rgba(7, 10, 16, 0.96));
+  box-shadow: var(--shadow-strong);
+  overflow: hidden;
+}
+
+.title-spotlight-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.title-spotlight-pairing {
+  margin: 0;
+  color: var(--gold-soft);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.9rem, 4vw, 2.95rem);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 0.98;
+}
+
+.title-spotlight-stage {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+.title-spotlight-title-card {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.title-spotlight-title-frame {
+  width: min(100%, 10rem);
+  aspect-ratio: 2 / 3;
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgba(241, 223, 182, 0.2);
+  border-radius: 1.05rem;
+  background: linear-gradient(180deg, rgba(74, 90, 119, 0.68), rgba(22, 29, 42, 0.96));
+  box-shadow:
+    0 1.1rem 1.6rem rgba(0, 0, 0, 0.34),
+    0 0 0 0.08rem rgba(255, 255, 255, 0.04);
+}
+
+.title-spotlight-title-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.title-spotlight-title-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--gold-soft);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2.25rem;
+}
+
+.title-spotlight-title-copy {
+  display: grid;
+  justify-items: center;
+  gap: 0.24rem;
+  text-align: center;
+}
+
+.title-spotlight-title-name {
+  color: var(--gold-soft);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.2rem;
+  line-height: 1.05;
+}
+
+.title-spotlight-title-year {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.title-spotlight-filmstrip {
+  position: relative;
+  min-height: 14.8rem;
+  border-radius: 1.6rem;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(144, 177, 214, 0.09), transparent 40%),
+    linear-gradient(180deg, rgba(15, 20, 29, 0.72), rgba(7, 10, 15, 0.26));
+}
+
+.title-spotlight-filmstrip::before {
+  content: '';
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 41%;
+  height: 2.75rem;
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(119, 156, 198, 0.18), transparent 60%),
+    linear-gradient(90deg, transparent, rgba(225, 198, 145, 0.08), transparent);
+  opacity: 0.42;
+  filter: blur(0.78rem);
+}
+
+.title-spotlight-filmstrip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%, transparent 76%, rgba(0, 0, 0, 0.18)),
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(4, 6, 11, 0.16) 100%);
+  pointer-events: none;
+}
+
+.title-spotlight-filmstrip-label {
+  position: absolute;
+  top: 0.95rem;
+  right: 1rem;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.8rem;
+  padding: 0.32rem 0.78rem;
+  border: 1px solid rgba(243, 228, 190, 0.14);
+  border-radius: 999px;
+  background: rgba(8, 11, 17, 0.82);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+}
+
+.title-spotlight-reel {
+  position: absolute;
+  inset: 31% 4.25% 33%;
+  width: 91.5%;
+  height: 36%;
+}
+
+.title-spotlight-reel-shadow {
+  fill: rgba(0, 0, 0, 0.42);
+  filter: blur(0.22rem);
+  transform: translateY(0.8px);
+  transform-origin: center;
+}
+
+.title-spotlight-reel-body {
+  fill: rgba(18, 23, 31, 0.97);
+  stroke: rgba(235, 214, 173, 0.14);
+  stroke-width: 0.35;
+}
+
+.title-spotlight-reel-sheen {
+  fill: rgba(77, 100, 131, 0.18);
+}
+
+.title-spotlight-reel-edge {
+  stroke: rgba(232, 211, 171, 0.72);
+  stroke-width: 0.82;
+  stroke-linecap: round;
+}
+
+.title-spotlight-reel-lane {
+  stroke: rgba(120, 148, 181, 0.24);
+  stroke-width: 0.46;
+  stroke-linecap: round;
+}
+
+.title-spotlight-reel-holes rect {
+  fill: rgba(4, 6, 11, 0.98);
+  stroke: rgba(238, 219, 177, 0.14);
+  stroke-width: 0.15;
+}
+
+.title-spotlight-reel-edge,
+.title-spotlight-reel-lane,
+.title-spotlight-reel-frames line {
+  fill: none;
+}
+
+.title-spotlight-reel-frames line {
+  stroke: rgba(239, 222, 183, 0.14);
+  stroke-width: 0.38;
+}
+
+.title-spotlight-actors {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  gap: 0.7rem;
+  align-items: end;
+  padding: 2.4rem 0.85rem 1rem;
+}
+
+.title-spotlight-actor-card {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(2.05rem, auto) minmax(1.65rem, auto);
+  justify-items: center;
+  align-self: end;
+  gap: 0.28rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.title-spotlight-portrait-medallion {
+  width: min(100%, 5rem);
+  box-shadow:
+    0 0.9rem 1.45rem rgba(0, 0, 0, 0.3),
+    0 0 0 0.08rem rgba(255, 245, 220, 0.05);
+}
+
+.title-spotlight-actor-name {
+  display: block;
+  max-width: 100%;
+  min-height: 2.05rem;
+  color: var(--gold-soft);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.02;
+  text-align: center;
+}
+
+.title-spotlight-actor-role {
+  display: block;
+  max-width: 8rem;
+  min-height: 1.65rem;
+  color: var(--text-muted);
+  font-size: 0.58rem;
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
 .dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -1774,6 +2030,22 @@ input:focus-visible,
     max-width: 6.6rem;
   }
 
+  .title-spotlight {
+    padding: 1rem;
+  }
+
+  .title-spotlight-filmstrip {
+    min-height: 13.4rem;
+  }
+
+  .title-spotlight-title-frame {
+    width: min(100%, 8rem);
+  }
+
+  .title-spotlight-portrait-medallion {
+    width: min(100%, 4.5rem);
+  }
+
   .dialog-backdrop {
     padding: env(safe-area-inset-top) 0 0;
     align-items: stretch;
@@ -1916,6 +2188,17 @@ input:focus-visible,
     justify-content: space-between;
   }
 
+  .results-section-titles .result-card,
+  .results-section-titles .result-skeleton {
+    gap: 0.6rem;
+  }
+
+  .results-section-titles .result-card-image-shell,
+  .results-section-titles .result-skeleton-image {
+    width: min(100%, 10rem);
+    margin-inline: auto;
+  }
+
   .results-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1941,6 +2224,28 @@ input:focus-visible,
   .actor-spotlight-portrait-shell {
     width: 100%;
     max-width: 10.75rem;
+  }
+
+  .title-spotlight {
+    padding: 1.5rem;
+  }
+
+  .title-spotlight-stage {
+    grid-template-columns: minmax(8.75rem, 10.75rem) minmax(0, 1fr) minmax(8.75rem, 10.75rem);
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .title-spotlight-filmstrip {
+    min-height: 17.4rem;
+  }
+
+  .title-spotlight-title-frame {
+    width: 100%;
+  }
+
+  .title-spotlight-portrait-medallion {
+    width: min(100%, 6rem);
   }
 
   .bacon-chain-compact,
