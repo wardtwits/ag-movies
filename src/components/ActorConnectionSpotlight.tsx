@@ -32,8 +32,14 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
     return null
   }
 
+  const reelRibbonPath =
+    'M2 12.7C15.5 10.15 29.3 10.25 42.8 13.6C48.6 15.05 51.4 15.05 57.2 13.6C70.7 10.25 84.5 10.15 98 12.7L98 23.3C84.5 20.75 70.7 20.85 57.2 24.2C51.4 25.65 48.6 25.65 42.8 24.2C29.3 20.85 15.5 20.75 2 23.3Z'
+  const reelTopEdgePath = 'M2 12.7C15.5 10.15 29.3 10.25 42.8 13.6C48.6 15.05 51.4 15.05 57.2 13.6C70.7 10.25 84.5 10.15 98 12.7'
+  const reelBottomEdgePath = 'M2 23.3C15.5 20.75 29.3 20.85 42.8 24.2C48.6 25.65 51.4 25.65 57.2 24.2C70.7 20.85 84.5 20.75 98 23.3'
+  const reelLanePath = 'M4 18C17 15.7 30.3 15.8 43.3 18.6C48.7 19.75 51.3 19.75 56.7 18.6C69.7 15.8 83 15.7 96 18'
+
   return (
-    <section className="actor-spotlight" aria-label={`Featured shared titles for ${leftActor.name} and ${rightActor.name}`}>
+    <section className="actor-spotlight" aria-label={`Shared titles for ${leftActor.name} and ${rightActor.name}`}>
       <div className="actor-spotlight-header">
         <p className="actor-spotlight-pairing">
           {leftActor.name} + {rightActor.name}
@@ -57,46 +63,37 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
         <div className="actor-spotlight-filmstrip">
           <div className="actor-spotlight-filmstrip-label">Shared Films &amp; Shows</div>
           <svg viewBox="0 0 100 30" className="actor-spotlight-reel" aria-hidden="true" preserveAspectRatio="none">
-            <path
-              className="actor-spotlight-reel-shadow"
-              d="M2 16C13 7.5 24 7.5 35 16C46 24.5 54 24.5 65 16C76 7.5 87 7.5 98 16"
-            />
-            <path
-              className="actor-spotlight-reel-body"
-              d="M2 16C13 7.5 24 7.5 35 16C46 24.5 54 24.5 65 16C76 7.5 87 7.5 98 16"
-            />
-            <path
-              className="actor-spotlight-reel-sheen"
-              d="M2 16C13 7.5 24 7.5 35 16C46 24.5 54 24.5 65 16C76 7.5 87 7.5 98 16"
-            />
-            <path
-              className="actor-spotlight-reel-edge"
-              d="M2 11.7C13 3.2 24 3.2 35 11.7C46 20.2 54 20.2 65 11.7C76 3.2 87 3.2 98 11.7"
-            />
-            <path
-              className="actor-spotlight-reel-edge"
-              d="M2 20.3C13 11.8 24 11.8 35 20.3C46 28.8 54 28.8 65 20.3C76 11.8 87 11.8 98 20.3"
-            />
+            <path className="actor-spotlight-reel-shadow" d={reelRibbonPath} />
+            <path className="actor-spotlight-reel-body" d={reelRibbonPath} />
+            <path className="actor-spotlight-reel-sheen" d="M2 13.55C15.5 11.55 29.3 11.7 42.8 14.35C48.6 15.5 51.4 15.5 57.2 14.35C70.7 11.7 84.5 11.55 98 13.55L98 15.9C84.5 13.9 70.7 14.05 57.2 16.7C51.4 17.85 48.6 17.85 42.8 16.7C29.3 14.05 15.5 13.9 2 15.9Z" />
+            <path className="actor-spotlight-reel-edge" d={reelTopEdgePath} />
+            <path className="actor-spotlight-reel-edge" d={reelBottomEdgePath} />
+            <path className="actor-spotlight-reel-lane" d={reelLanePath} />
+            <g className="actor-spotlight-reel-frames">
+              <line x1="17.5" y1="13.7" x2="17.5" y2="22.2" />
+              <line x1="34" y1="14" x2="34" y2="22.5" />
+              <line x1="50" y1="14.35" x2="50" y2="22.85" />
+              <line x1="66" y1="14" x2="66" y2="22.5" />
+              <line x1="82.5" y1="13.7" x2="82.5" y2="22.2" />
+            </g>
             <g className="actor-spotlight-reel-holes">
-              <rect x="9.5" y="7.1" width="2.6" height="1.2" rx="0.34" transform="rotate(-22 10.8 7.7)" />
-              <rect x="19.3" y="4.9" width="2.6" height="1.2" rx="0.34" transform="rotate(-10 20.6 5.5)" />
-              <rect x="29" y="5" width="2.6" height="1.2" rx="0.34" transform="rotate(7 30.3 5.6)" />
-              <rect x="39.1" y="9.3" width="2.6" height="1.2" rx="0.34" transform="rotate(19 40.4 9.9)" />
-              <rect x="48.7" y="12.1" width="2.6" height="1.2" rx="0.34" transform="rotate(0 50 12.7)" />
-              <rect x="58.3" y="9.2" width="2.6" height="1.2" rx="0.34" transform="rotate(-18 59.6 9.8)" />
-              <rect x="68.4" y="5" width="2.6" height="1.2" rx="0.34" transform="rotate(-7 69.7 5.6)" />
-              <rect x="78.1" y="4.9" width="2.6" height="1.2" rx="0.34" transform="rotate(11 79.4 5.5)" />
-              <rect x="87.9" y="7.2" width="2.6" height="1.2" rx="0.34" transform="rotate(21 89.2 7.8)" />
+              <rect x="7" y="13.75" width="5.1" height="1.55" rx="0.24" />
+              <rect x="17.9" y="13.45" width="5.1" height="1.55" rx="0.24" />
+              <rect x="28.8" y="13.35" width="5.1" height="1.55" rx="0.24" />
+              <rect x="39.7" y="14.1" width="5.1" height="1.55" rx="0.24" />
+              <rect x="50.55" y="14.45" width="5.1" height="1.55" rx="0.24" />
+              <rect x="61.4" y="14.1" width="5.1" height="1.55" rx="0.24" />
+              <rect x="72.25" y="13.4" width="5.1" height="1.55" rx="0.24" />
+              <rect x="83.1" y="13.65" width="5.1" height="1.55" rx="0.24" />
 
-              <rect x="9.5" y="23.3" width="2.6" height="1.2" rx="0.34" transform="rotate(22 10.8 23.9)" />
-              <rect x="19.3" y="25.5" width="2.6" height="1.2" rx="0.34" transform="rotate(10 20.6 26.1)" />
-              <rect x="29" y="25.4" width="2.6" height="1.2" rx="0.34" transform="rotate(-7 30.3 26)" />
-              <rect x="39.1" y="21.2" width="2.6" height="1.2" rx="0.34" transform="rotate(-19 40.4 21.8)" />
-              <rect x="48.7" y="18.4" width="2.6" height="1.2" rx="0.34" transform="rotate(0 50 19)" />
-              <rect x="58.3" y="21.3" width="2.6" height="1.2" rx="0.34" transform="rotate(18 59.6 21.9)" />
-              <rect x="68.4" y="25.4" width="2.6" height="1.2" rx="0.34" transform="rotate(7 69.7 26)" />
-              <rect x="78.1" y="25.5" width="2.6" height="1.2" rx="0.34" transform="rotate(-11 79.4 26.1)" />
-              <rect x="87.9" y="23.3" width="2.6" height="1.2" rx="0.34" transform="rotate(-21 89.2 23.9)" />
+              <rect x="7" y="20.65" width="5.1" height="1.55" rx="0.24" />
+              <rect x="17.9" y="20.95" width="5.1" height="1.55" rx="0.24" />
+              <rect x="28.8" y="21.05" width="5.1" height="1.55" rx="0.24" />
+              <rect x="39.7" y="20.3" width="5.1" height="1.55" rx="0.24" />
+              <rect x="50.55" y="19.95" width="5.1" height="1.55" rx="0.24" />
+              <rect x="61.4" y="20.3" width="5.1" height="1.55" rx="0.24" />
+              <rect x="72.25" y="21.02" width="5.1" height="1.55" rx="0.24" />
+              <rect x="83.1" y="20.75" width="5.1" height="1.55" rx="0.24" />
             </g>
           </svg>
 
