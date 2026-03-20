@@ -823,6 +823,45 @@ function App() {
           inputKind: 'person' as const,
         }
 
+  const searchFields = (
+    <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
+      <SearchAutocompleteField
+        label={mode === 'titles' ? 'First title' : 'First actor'}
+        value={primaryQuery}
+        placeholder={PRIMARY_PLACEHOLDERS[mode]}
+        inputKind={primaryFieldConfig.inputKind}
+        suggestions={primaryFieldConfig.suggestions}
+        selectedEntity={primaryFieldConfig.selectedEntity}
+        isLoading={primaryFieldConfig.isLoading}
+        minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
+        hasSearched={primaryFieldConfig.hasSearched}
+        trailingAction={baconTrailingAction}
+        onChange={handlePrimaryInputChange}
+        onSelect={handlePrimarySelect}
+        onClearSelection={clearPrimarySelection}
+      />
+
+      {mode !== 'bacon' ? <div className="search-row-plus" aria-hidden="true">+</div> : null}
+
+      {mode !== 'bacon' ? (
+        <SearchAutocompleteField
+          label={mode === 'titles' ? 'Second title' : 'Second actor'}
+          value={secondaryQuery}
+          placeholder={SECONDARY_PLACEHOLDERS[mode as 'actors' | 'titles']}
+          inputKind={secondaryFieldConfig.inputKind}
+          suggestions={secondaryFieldConfig.suggestions}
+          selectedEntity={secondaryFieldConfig.selectedEntity}
+          isLoading={secondaryFieldConfig.isLoading}
+          minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
+          hasSearched={secondaryFieldConfig.hasSearched}
+          onChange={handleSecondaryInputChange}
+          onSelect={handleSecondarySelect}
+          onClearSelection={clearSecondarySelection}
+        />
+      ) : null}
+    </div>
+  )
+
   return (
     <div className="app-shell">
       <AppNav onAboutOpen={() => setAboutOpen(true)} onHowItWorksOpen={() => setHowItWorksOpen(true)} />
@@ -831,58 +870,41 @@ function App() {
         <section className={`hero-stage hero-stage-${mode}`}>
           <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
-          <section className="search-panel">
-            <div className="search-panel-toolbar">
-              {shouldShowClearButton ? (
+        <section className="search-panel">
+          {shouldShowClearButton ? (
+            <div className="search-panel-primary search-panel-primary-dual search-panel-primary-with-clear">
+              {searchFields}
+              <div className="search-panel-toolbar search-panel-toolbar-inline">
                 <button
                   type="button"
-                  className="clear-search-button"
+                  className="clear-search-button clear-search-button-inline"
                   onClick={resetSelectionsAndResults}
                   disabled={!canClearSearchFields}
                 >
                   Clear Selection
                 </button>
-              ) : (
-                <p className="search-panel-helper-text">{helperText}</p>
-              )}
+              </div>
             </div>
+          ) : (
+            <>
+              <div className="search-panel-toolbar">
+                {shouldShowClearButton ? (
+                  <button
+                    type="button"
+                    className="clear-search-button"
+                    onClick={resetSelectionsAndResults}
+                    disabled={!canClearSearchFields}
+                  >
+                    Clear Selection
+                  </button>
+                ) : (
+                  <p className="search-panel-helper-text">{helperText}</p>
+                )}
+              </div>
 
-            <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
-              <SearchAutocompleteField
-                label={mode === 'titles' ? 'First title' : 'First actor'}
-                value={primaryQuery}
-                placeholder={PRIMARY_PLACEHOLDERS[mode]}
-                inputKind={primaryFieldConfig.inputKind}
-                suggestions={primaryFieldConfig.suggestions}
-                selectedEntity={primaryFieldConfig.selectedEntity}
-                isLoading={primaryFieldConfig.isLoading}
-                minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
-                hasSearched={primaryFieldConfig.hasSearched}
-                trailingAction={baconTrailingAction}
-                onChange={handlePrimaryInputChange}
-                onSelect={handlePrimarySelect}
-                onClearSelection={clearPrimarySelection}
-              />
-
-              {mode !== 'bacon' ? <div className="search-row-plus" aria-hidden="true">+</div> : null}
-
-              {mode !== 'bacon' ? (
-                <SearchAutocompleteField
-                  label={mode === 'titles' ? 'Second title' : 'Second actor'}
-                  value={secondaryQuery}
-                  placeholder={SECONDARY_PLACEHOLDERS[mode as 'actors' | 'titles']}
-                  inputKind={secondaryFieldConfig.inputKind}
-                  suggestions={secondaryFieldConfig.suggestions}
-                  selectedEntity={secondaryFieldConfig.selectedEntity}
-                  isLoading={secondaryFieldConfig.isLoading}
-                  minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
-                  hasSearched={secondaryFieldConfig.hasSearched}
-                  onChange={handleSecondaryInputChange}
-                  onSelect={handleSecondarySelect}
-                  onClearSelection={clearSecondarySelection}
-                />
-              ) : null}
-            </div>
+              {searchFields}
+            </>
+          )}
 
             {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
               <div className="search-panel-actions">
