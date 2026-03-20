@@ -2232,7 +2232,7 @@ input:focus-visible,
 
   .search-row-single .search-input-shell,
   .search-row-single .search-selected-shell {
-    min-height: 4.35rem;
+    min-height: 3.5rem;
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -2241,7 +2241,7 @@ input:focus-visible,
 
   .search-row:not(.search-row-single) .search-input-shell,
   .search-row:not(.search-row-single) .search-selected-shell {
-    min-height: 4.35rem;
+    min-height: 3.5rem;
     border-radius: 1.45rem;
   }
 
