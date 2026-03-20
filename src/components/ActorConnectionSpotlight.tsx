@@ -57,9 +57,35 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
         </div>
 
         <div className="actor-spotlight-filmstrip">
-          <svg viewBox="0 0 100 26" className="actor-spotlight-reel" aria-hidden="true" preserveAspectRatio="none">
+          <svg viewBox="0 0 100 30" className="actor-spotlight-reel" aria-hidden="true" preserveAspectRatio="none">
             <path
+              className="actor-spotlight-reel-shadow"
               d="M2 16.5C10 3.5 21 3.5 31 16.5C41 29.5 53 29.5 63 16.5C73 3.5 86 3.5 98 16.5"
+            />
+            <path
+              className="actor-spotlight-reel-ribbon"
+              d="M2 16.5C10 3.5 21 3.5 31 16.5C41 29.5 53 29.5 63 16.5C73 3.5 86 3.5 98 16.5"
+            />
+            <path
+              className="actor-spotlight-reel-track"
+              d="M2 16.5C10 3.5 21 3.5 31 16.5C41 29.5 53 29.5 63 16.5C73 3.5 86 3.5 98 16.5"
+            />
+            <path
+              className="actor-spotlight-reel-edge"
+              d="M2 12.9C10 -0.1 21 -0.1 31 12.9C41 25.9 53 25.9 63 12.9C73 -0.1 86 -0.1 98 12.9"
+            />
+            <path
+              className="actor-spotlight-reel-edge"
+              d="M2 20.1C10 7.1 21 7.1 31 20.1C41 33.1 53 33.1 63 20.1C73 7.1 86 7.1 98 20.1"
+            />
+            <path
+              className="actor-spotlight-reel-perf"
+              d="M2 12.9C10 -0.1 21 -0.1 31 12.9C41 25.9 53 25.9 63 12.9C73 -0.1 86 -0.1 98 12.9"
+              pathLength="100"
+            />
+            <path
+              className="actor-spotlight-reel-perf"
+              d="M2 20.1C10 7.1 21 7.1 31 20.1C41 33.1 53 33.1 63 20.1C73 7.1 86 7.1 98 20.1"
               pathLength="100"
             />
           </svg>
