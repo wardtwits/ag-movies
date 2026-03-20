@@ -14,16 +14,12 @@ const MODE_OPTIONS: Array<{ value: SearchMode; label: string }> = [
 export const HeroHeader = ({ mode, onModeChange }: HeroHeaderProps) => {
   return (
     <header className="hero-header">
-      <h1 className="brand-wordmark" translate="no" aria-label="CastLink">
-        <span className="brand-blue">C</span>
-        <span className="brand-red">a</span>
-        <span className="brand-yellow">s</span>
-        <span className="brand-blue">t</span>
-        <span className="brand-green">L</span>
-        <span className="brand-red">i</span>
-        <span className="brand-yellow">n</span>
-        <span className="brand-blue">k</span>
-      </h1>
+      <div className="hero-copy">
+        <p className="hero-eyebrow">Cinematic Connections</p>
+        <h1 className="brand-wordmark" translate="no" aria-label="CastLink">
+          CastLink
+        </h1>
+      </div>
 
       <div className="mode-tabs" role="radiogroup" aria-label="Search mode">
         {MODE_OPTIONS.map((option) => {
@@ -37,7 +33,7 @@ export const HeroHeader = ({ mode, onModeChange }: HeroHeaderProps) => {
                 checked={isActive}
                 onChange={() => onModeChange(option.value)}
               />
-              <span>{option.value === 'bacon' ? '🥓 Bacon\'s Law' : option.label}</span>
+              <span>{option.label}</span>
             </label>
           )
         })}

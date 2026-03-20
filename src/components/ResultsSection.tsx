@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { FilterToggle } from './FilterToggle'
 import { LinkIcon } from './LinkIcon'
 import { ResultCard, type ResultCardData } from './ResultCard'
@@ -13,6 +14,7 @@ interface ResultsSectionProps {
   isLoading: boolean
   resultCount: number
   groups: ResultCardGroup[]
+  spotlight?: ReactNode
   emptyDescription: string
   errorMessage: string | null
   showingHiddenExtras: boolean
@@ -31,6 +33,7 @@ export const ResultsSection = ({
   isLoading,
   resultCount,
   groups,
+  spotlight,
   emptyDescription,
   errorMessage,
   showingHiddenExtras,
@@ -44,6 +47,9 @@ export const ResultsSection = ({
   if (!hasSearched) {
     return null
   }
+
+  const hasRenderableGroups = groups.some((group) => group.cards.length > 0)
+  const hasRenderableContent = Boolean(spotlight) || hasRenderableGroups
 
   return (
     <section className="results-section" aria-live="polite">
@@ -83,8 +89,9 @@ export const ResultsSection = ({
             </div>
           ))}
         </div>
-      ) : groups.some((group) => group.cards.length > 0) ? (
+      ) : hasRenderableContent ? (
         <div className="results-groups">
+          {spotlight ? <div className="results-spotlight">{spotlight}</div> : null}
           {groups.filter((group) => group.cards.length > 0).map((group, index) => (
             <section key={group.id} className="results-group">
               {group.title ? (

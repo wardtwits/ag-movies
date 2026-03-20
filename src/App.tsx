@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AboutDialog } from './components/AboutDialog'
+import { ActorConnectionSpotlight } from './components/ActorConnectionSpotlight'
 import { AppNav } from './components/AppNav'
 import { BaconPathSection } from './components/BaconPathSection'
 import { HeroHeader, type SearchMode } from './components/HeroHeader'
@@ -44,6 +45,14 @@ import './App.css'
 type SearchSelection = MediaTitle | PersonSummary
 
 type ComparisonSearchState = ShareComparisonState
+type SpotlightMetaLabel = 'Most Popular' | 'Earliest' | 'Most Recent'
+type ActorSpotlightTitleCard = ResultCardData & { metaLabel?: SpotlightMetaLabel }
+
+interface ActorSpotlightData {
+  leftActor: PersonSummary
+  rightActor: PersonSummary
+  titles: ActorSpotlightTitleCard[]
+}
 
 const isMediaSelection = (selection: SearchSelection | null): selection is MediaTitle =>
   selection !== null && 'mediaType' in selection
@@ -179,11 +188,11 @@ const compareTitlesByMostRecentRelease = (left: SharedTitle, right: SharedTitle)
 
 const pickHighlightedActorTitles = (
   titles: SharedTitle[],
-): Array<{ title: SharedTitle; metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent' }> => {
-  const highlighted: Array<{ title: SharedTitle; metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent' }> = []
+): Array<{ title: SharedTitle; metaLabel?: SpotlightMetaLabel }> => {
+  const highlighted: Array<{ title: SharedTitle; metaLabel?: SpotlightMetaLabel }> = []
   const usedKeys = new Set<string>()
 
-  const pickNext = (title: SharedTitle | undefined, metaLabel: 'Most Popular' | 'Earliest' | 'Most Recent') => {
+  const pickNext = (title: SharedTitle | undefined, metaLabel?: SpotlightMetaLabel) => {
     if (!title) {
       return
     }
@@ -206,6 +215,38 @@ const pickHighlightedActorTitles = (
   }
 
   return highlighted
+}
+
+const buildActorSpotlightTitles = (titles: SharedTitle[]): ActorSpotlightTitleCard[] => {
+  if (!titles.length) {
+    return []
+  }
+
+  const sortedTitles = [...titles].sort(compareTitlesByPopularity)
+  const starTitles = sortedTitles.filter((title) => isStarBillingOrder(title.leftOrder) || isStarBillingOrder(title.rightOrder))
+  const preferredTitles = starTitles.length ? starTitles : sortedTitles
+  const highlighted = pickHighlightedActorTitles(preferredTitles)
+  const highlightedKeys = new Set(highlighted.map(({ title }) => getSharedTitleKey(title)))
+  const targetCount = Math.min(3, sortedTitles.length)
+
+  for (const title of sortedTitles) {
+    if (highlighted.length >= targetCount) {
+      break
+    }
+
+    const titleKey = getSharedTitleKey(title)
+    if (highlightedKeys.has(titleKey)) {
+      continue
+    }
+
+    highlighted.push({ title })
+    highlightedKeys.add(titleKey)
+  }
+
+  return highlighted.map(({ title, metaLabel }) => ({
+    ...mapSharedTitleToCard(title),
+    metaLabel,
+  }))
 }
 
 const mapSharedActorToCard = (actor: SharedActor) => ({
@@ -233,37 +274,15 @@ const compareExtraActorsForTitles = (left: SharedActor, right: SharedActor): num
   return left.name.localeCompare(right.name)
 }
 
-const buildResultGroups = (featuredCards: ResultCardData[], extraCards: ResultCardData[]): ResultCardGroup[] => {
-  const groups: ResultCardGroup[] = []
-
-  if (featuredCards.length) {
-    groups.push({
-      id: 'featured',
-      title: 'Stars / Featured',
-      cards: featuredCards,
-    })
-  }
-
-  if (extraCards.length) {
-    groups.push({
-      id: 'extras',
-      title: 'Extras or Guests',
-      cards: extraCards,
-    })
-  }
-
-  return groups
-}
-
 const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
-  actors: 'Search first actor...',
-  titles: 'Search first movie or show...',
-  bacon: 'Type in an actor, or...',
+  actors: 'Actor A',
+  titles: 'Title A',
+  bacon: 'Enter an actor name',
 }
 
 const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
-  actors: 'Search second actor...',
-  titles: 'Search second movie or show...',
+  actors: 'Actor B',
+  titles: 'Title B',
 }
 
 const SHOW_RANDOM_MATCH = false
@@ -345,6 +364,23 @@ function App() {
     return isFilteringVisibleOnly ? filteredComparisonState : comparisonState
   }, [comparisonState, filteredComparisonState, isFilteringVisibleOnly])
 
+  const actorSpotlight = useMemo<ActorSpotlightData | null>(() => {
+    if (!displayedComparisonState || displayedComparisonState.kind !== 'actors') {
+      return null
+    }
+
+    const titles = buildActorSpotlightTitles(displayedComparisonState.result.sharedTitles)
+    if (!titles.length) {
+      return null
+    }
+
+    return {
+      leftActor: displayedComparisonState.result.left.person,
+      rightActor: displayedComparisonState.result.right.person,
+      titles,
+    }
+  }, [displayedComparisonState])
+
   const resultGroups = useMemo<ResultCardGroup[]>(() => {
     if (!displayedComparisonState) {
       return []
@@ -352,26 +388,20 @@ function App() {
 
     if (displayedComparisonState.kind === 'actors') {
       const sortedTitles = [...displayedComparisonState.result.sharedTitles].sort(compareTitlesByPopularity)
-      const featuredTitles = sortedTitles.filter(
-        (title) => isStarBillingOrder(title.leftOrder) || isStarBillingOrder(title.rightOrder),
-      )
-      const extraTitles = sortedTitles.filter(
-        (title) => !isStarBillingOrder(title.leftOrder) && !isStarBillingOrder(title.rightOrder),
-      )
-      const highlightedTitles = pickHighlightedActorTitles(featuredTitles)
-      const highlightedTitleKeys = new Set(highlightedTitles.map(({ title }) => getSharedTitleKey(title)))
-      const highlightedCards = highlightedTitles.map(({ title, metaLabel }) => ({
-        ...mapSharedTitleToCard(title),
-        metaLabel,
-      }))
-      const remainingFeaturedCards = featuredTitles
-        .filter((title) => !highlightedTitleKeys.has(getSharedTitleKey(title)))
+      const spotlightKeys = new Set(actorSpotlight?.titles.map((title) => title.id) ?? [])
+      const remainingCards = sortedTitles
+        .filter((title) => !spotlightKeys.has(getSharedTitleKey(title)))
         .map(mapSharedTitleToCard)
 
-      return buildResultGroups(
-        [...highlightedCards, ...remainingFeaturedCards],
-        extraTitles.map(mapSharedTitleToCard),
-      )
+      return remainingCards.length
+        ? [
+            {
+              id: 'remaining',
+              title: 'Further Shared Credits',
+              cards: remainingCards,
+            },
+          ]
+        : []
     }
 
     const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
@@ -379,8 +409,26 @@ function App() {
       .filter((actor) => actor.roleCategory === 'extra-both')
       .sort(compareExtraActorsForTitles)
 
-    return buildResultGroups(featuredActors.map(mapSharedActorToCard), extraActors.map(mapSharedActorToCard))
-  }, [displayedComparisonState])
+    const groups: ResultCardGroup[] = []
+
+    if (featuredActors.length) {
+      groups.push({
+        id: 'shared-cast',
+        title: 'Top-Billed Shared Cast',
+        cards: featuredActors.map(mapSharedActorToCard),
+      })
+    }
+
+    if (extraActors.length) {
+      groups.push({
+        id: 'supporting-cast',
+        title: 'Supporting Shared Cast',
+        cards: extraActors.map(mapSharedActorToCard),
+      })
+    }
+
+    return groups
+  }, [actorSpotlight, displayedComparisonState])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
   const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0 && !showingHiddenExtras
@@ -391,6 +439,12 @@ function App() {
     ((mode !== 'bacon' && activeSearchKey !== null && hasSearched) || (mode === 'bacon' && baconResult !== null))
   const copyResultsLinkLabel =
     shareCopyState === 'copied' ? 'Copied' : shareCopyState === 'error' ? 'Unable to copy' : 'Copy Results Link'
+  const helperText =
+    mode === 'actors'
+      ? 'Choose two performers to uncover the titles that connect them.'
+      : mode === 'titles'
+        ? 'Compare two movies or shows to reveal the cast they share.'
+        : 'Trace a performer back to Kevin Bacon through shared screen credits.'
 
   useEffect(() => {
     return () => {
@@ -774,79 +828,81 @@ function App() {
       <AppNav onAboutOpen={() => setAboutOpen(true)} onHowItWorksOpen={() => setHowItWorksOpen(true)} />
 
       <main className="app-main">
-        <HeroHeader mode={mode} onModeChange={handleModeChange} />
+        <section className={`hero-stage hero-stage-${mode}`}>
+          <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
-        <section className="search-panel">
-          <div className="search-panel-toolbar">
-            {shouldShowClearButton ? (
-              <button
-                type="button"
-                className="clear-search-button"
-                onClick={resetSelectionsAndResults}
-                disabled={!canClearSearchFields}
-              >
-                Clear Both Fields
-              </button>
-            ) : (
-              <p className="search-panel-helper-text">Find the links between actors, movies, and shows</p>
-            )}
-          </div>
+          <section className="search-panel">
+            <div className="search-panel-toolbar">
+              {shouldShowClearButton ? (
+                <button
+                  type="button"
+                  className="clear-search-button"
+                  onClick={resetSelectionsAndResults}
+                  disabled={!canClearSearchFields}
+                >
+                  Clear Selection
+                </button>
+              ) : (
+                <p className="search-panel-helper-text">{helperText}</p>
+              )}
+            </div>
 
-          <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
-            <SearchAutocompleteField
-              label={mode === 'titles' ? 'First title' : 'First actor'}
-              value={primaryQuery}
-              placeholder={PRIMARY_PLACEHOLDERS[mode]}
-              inputKind={primaryFieldConfig.inputKind}
-              suggestions={primaryFieldConfig.suggestions}
-              selectedEntity={primaryFieldConfig.selectedEntity}
-              isLoading={primaryFieldConfig.isLoading}
-              minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
-              hasSearched={primaryFieldConfig.hasSearched}
-              trailingAction={baconTrailingAction}
-              onChange={handlePrimaryInputChange}
-              onSelect={handlePrimarySelect}
-              onClearSelection={clearPrimarySelection}
-            />
-
-            {mode !== 'bacon' ? <div className="search-row-plus" aria-hidden="true">+</div> : null}
-
-            {mode !== 'bacon' ? (
+            <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
               <SearchAutocompleteField
-                label={mode === 'titles' ? 'Second title' : 'Second actor'}
-                value={secondaryQuery}
-                placeholder={SECONDARY_PLACEHOLDERS[mode as 'actors' | 'titles']}
-                inputKind={secondaryFieldConfig.inputKind}
-                suggestions={secondaryFieldConfig.suggestions}
-                selectedEntity={secondaryFieldConfig.selectedEntity}
-                isLoading={secondaryFieldConfig.isLoading}
+                label={mode === 'titles' ? 'First title' : 'First actor'}
+                value={primaryQuery}
+                placeholder={PRIMARY_PLACEHOLDERS[mode]}
+                inputKind={primaryFieldConfig.inputKind}
+                suggestions={primaryFieldConfig.suggestions}
+                selectedEntity={primaryFieldConfig.selectedEntity}
+                isLoading={primaryFieldConfig.isLoading}
                 minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
-                hasSearched={secondaryFieldConfig.hasSearched}
-                onChange={handleSecondaryInputChange}
-                onSelect={handleSecondarySelect}
-                onClearSelection={clearSecondarySelection}
+                hasSearched={primaryFieldConfig.hasSearched}
+                trailingAction={baconTrailingAction}
+                onChange={handlePrimaryInputChange}
+                onSelect={handlePrimarySelect}
+                onClearSelection={clearPrimarySelection}
+              />
+
+              {mode !== 'bacon' ? <div className="search-row-plus" aria-hidden="true">+</div> : null}
+
+              {mode !== 'bacon' ? (
+                <SearchAutocompleteField
+                  label={mode === 'titles' ? 'Second title' : 'Second actor'}
+                  value={secondaryQuery}
+                  placeholder={SECONDARY_PLACEHOLDERS[mode as 'actors' | 'titles']}
+                  inputKind={secondaryFieldConfig.inputKind}
+                  suggestions={secondaryFieldConfig.suggestions}
+                  selectedEntity={secondaryFieldConfig.selectedEntity}
+                  isLoading={secondaryFieldConfig.isLoading}
+                  minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
+                  hasSearched={secondaryFieldConfig.hasSearched}
+                  onChange={handleSecondaryInputChange}
+                  onSelect={handleSecondarySelect}
+                  onClearSelection={clearSecondarySelection}
+                />
+              ) : null}
+            </div>
+
+            {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
+              <div className="search-panel-actions">
+                <button type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
+                  Random Match
+                </button>
+              </div>
+            ) : null}
+
+            {mode === 'bacon' ? (
+              <BaconPathSection
+                isLoading={isLoading}
+                errorMessage={errorMessage}
+                result={baconResult}
+                showCopyResultsLink={shouldShowCopyResultsLink}
+                copyResultsLinkLabel={copyResultsLinkLabel}
+                onCopyResultsLink={handleCopyResultsLink}
               />
             ) : null}
-          </div>
-
-          {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
-            <div className="search-panel-actions">
-              <button type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
-                Random Match
-              </button>
-            </div>
-          ) : null}
-
-          {mode === 'bacon' ? (
-            <BaconPathSection
-              isLoading={isLoading}
-              errorMessage={errorMessage}
-              result={baconResult}
-              showCopyResultsLink={shouldShowCopyResultsLink}
-              copyResultsLinkLabel={copyResultsLinkLabel}
-              onCopyResultsLink={handleCopyResultsLink}
-            />
-          ) : null}
+          </section>
         </section>
 
         {mode !== 'bacon' ? (
@@ -855,6 +911,15 @@ function App() {
             isLoading={isLoading}
             resultCount={resultCount}
             groups={resultGroups}
+            spotlight={
+              mode === 'actors' && actorSpotlight ? (
+                <ActorConnectionSpotlight
+                  leftActor={actorSpotlight.leftActor}
+                  rightActor={actorSpotlight.rightActor}
+                  titles={actorSpotlight.titles}
+                />
+              ) : undefined
+            }
             emptyDescription={
               mode === 'actors'
                 ? 'Try searching for different actors to see shared titles.'
