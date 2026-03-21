@@ -2278,16 +2278,19 @@ input:focus-visible,
     padding: 1rem;
   }
 
+  .title-spotlight-header,
   .title-spotlight-filmstrip {
-    min-height: 13.4rem;
+    display: none;
+  }
+
+  .title-spotlight-stage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    align-items: start;
   }
 
   .title-spotlight-title-frame {
-    width: min(100%, 8rem);
-  }
-
-  .title-spotlight-portrait-medallion {
-    width: min(100%, 4.5rem);
+    width: min(100%, 7rem);
   }
 
   .dialog-backdrop {

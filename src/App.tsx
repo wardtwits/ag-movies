@@ -468,7 +468,7 @@ function App() {
 
     const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
     const actors = buildTitleSpotlightActors(featuredActors)
-    if (!actors.length) {
+    if (!actors.length && !isMobileViewport) {
       return null
     }
 
@@ -477,7 +477,7 @@ function App() {
       rightTitle: displayedComparisonState.result.right.media,
       actors,
     }
-  }, [displayedComparisonState])
+  }, [displayedComparisonState, isMobileViewport])
 
   const resultGroups = useMemo<ResultCardGroup[]>(() => {
     if (!displayedComparisonState) {
@@ -527,11 +527,26 @@ function App() {
     const featuredActors = displayedComparisonState.result.sharedActors
       .filter((actor) => actor.roleCategory !== 'extra-both')
       .sort(compareFeaturedActorsForResults)
-    const spotlightActorKeys = new Set(titleSpotlight?.actors.map((actor) => actor.id) ?? [])
-    const remainingFeaturedActors = featuredActors.filter((actor) => !spotlightActorKeys.has(`person-${actor.id}`))
     const extraActors = displayedComparisonState.result.sharedActors
       .filter((actor) => actor.roleCategory === 'extra-both')
       .sort(compareExtraActorsForTitles)
+
+    if (isMobileViewport) {
+      const cards = [...featuredActors, ...extraActors].map(mapSharedActorToCard)
+
+      return cards.length
+        ? [
+            {
+              id: 'shared-cast',
+              title: 'Shared Cast',
+              cards,
+            },
+          ]
+        : []
+    }
+
+    const spotlightActorKeys = new Set(titleSpotlight?.actors.map((actor) => actor.id) ?? [])
+    const remainingFeaturedActors = featuredActors.filter((actor) => !spotlightActorKeys.has(`person-${actor.id}`))
 
     const groups: ResultCardGroup[] = []
 

@@ -29,10 +29,6 @@ const getYearLabel = (title: MediaTitle): string => title.releaseDate?.slice(0, 
 const getRoleLabel = (subtitle: string): string | null => (subtitle === 'Actor' ? null : subtitle.replace(/^Role:\s*/, ''))
 
 export const TitleConnectionSpotlight = ({ leftTitle, rightTitle, actors }: TitleConnectionSpotlightProps) => {
-  if (!actors.length) {
-    return null
-  }
-
   return (
     <section className="title-spotlight" aria-label={`Top-billed shared cast for ${leftTitle.title} and ${rightTitle.title}`}>
       <div className="title-spotlight-header">
@@ -62,36 +58,38 @@ export const TitleConnectionSpotlight = ({ leftTitle, rightTitle, actors }: Titl
           </span>
         </a>
 
-        <div className="title-spotlight-filmstrip">
-          <div className="title-spotlight-filmstrip-label">Top-Billed Shared Cast</div>
-          <img src={FILM_ROLL_IMAGE_URL} alt="" className="title-spotlight-reel" aria-hidden="true" />
+        {actors.length ? (
+          <div className="title-spotlight-filmstrip">
+            <div className="title-spotlight-filmstrip-label">Top-Billed Shared Cast</div>
+            <img src={FILM_ROLL_IMAGE_URL} alt="" className="title-spotlight-reel" aria-hidden="true" />
 
-          <div className="title-spotlight-actors" style={{ gridTemplateColumns: `repeat(${actors.length}, minmax(0, 1fr))` }}>
-            {actors.map((actor) => (
-              <a
-                key={actor.id}
-                href={actor.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="title-spotlight-actor-card"
-              >
-                <span className="actor-spotlight-portrait-shell title-spotlight-portrait-medallion">
-                  {getProfileImageUrl(actor.imagePath) ? (
-                    <img src={getProfileImageUrl(actor.imagePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-                  ) : (
-                    <span className="actor-spotlight-fallback" aria-hidden="true">
-                      {getInitials(actor.title)}
-                    </span>
-                  )}
-                </span>
-                <span className="title-spotlight-actor-name">{actor.title}</span>
-                {getRoleLabel(actor.subtitle) ? (
-                  <span className="title-spotlight-actor-role">{getRoleLabel(actor.subtitle)}</span>
-                ) : null}
-              </a>
-            ))}
+            <div className="title-spotlight-actors" style={{ gridTemplateColumns: `repeat(${actors.length}, minmax(0, 1fr))` }}>
+              {actors.map((actor) => (
+                <a
+                  key={actor.id}
+                  href={actor.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="title-spotlight-actor-card"
+                >
+                  <span className="actor-spotlight-portrait-shell title-spotlight-portrait-medallion">
+                    {getProfileImageUrl(actor.imagePath) ? (
+                      <img src={getProfileImageUrl(actor.imagePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+                    ) : (
+                      <span className="actor-spotlight-fallback" aria-hidden="true">
+                        {getInitials(actor.title)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="title-spotlight-actor-name">{actor.title}</span>
+                  {getRoleLabel(actor.subtitle) ? (
+                    <span className="title-spotlight-actor-role">{getRoleLabel(actor.subtitle)}</span>
+                  ) : null}
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <a href={getMediaHref(rightTitle)} target="_blank" rel="noopener noreferrer" className="title-spotlight-title-card">
           <span className="title-spotlight-title-frame">
