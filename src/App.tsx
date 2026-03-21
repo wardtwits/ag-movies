@@ -1050,7 +1050,7 @@ function App() {
         }
 
   const searchFields = (
-    <div className={`search-row${mode === 'bacon' ? ' search-row-single' : ''}`}>
+    <div className={`search-row${mode === 'bacon' ? ' search-row-single search-row-bacon' : ''}`}>
       <SearchAutocompleteField
         label={mode === 'titles' ? 'First title' : 'First actor'}
         value={primaryQuery}
@@ -1111,7 +1111,7 @@ function App() {
         <section className={`hero-stage hero-stage-${mode}`}>
           <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
-        <section className="search-panel">
+        <section className={`search-panel search-panel-mode-${mode}`}>
           {mode !== 'bacon' ? (
             <>
               {!shouldShowClearButton ? (
