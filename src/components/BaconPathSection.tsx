@@ -113,33 +113,33 @@ export const BaconPathSection = ({
 
       {result.steps.length ? (
         <div className="bacon-filmstrip">
-          <a
-            href={tmdbPersonHref(result.actor.person.id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bacon-person-node bacon-person-node-large bacon-filmstrip-endpoint"
-            role="listitem"
-          >
-            <span className="actor-spotlight-portrait-shell bacon-person-medallion">
-              {getProfileImageUrl(result.actor.person.profilePath) ? (
-                <img src={getProfileImageUrl(result.actor.person.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-              ) : (
-                <span className="actor-spotlight-fallback" aria-hidden="true">
-                  {getInitials(result.actor.person.name)}
-                </span>
-              )}
-            </span>
-            <span className="bacon-person-name">{result.actor.person.name}</span>
-          </a>
-
           <div className="bacon-track">
-            <img src={FILM_ROLL_IMAGE_URL} alt="" className="bacon-reel" aria-hidden="true" />
-
             <div
               className={`bacon-chain${result.degree < 3 ? ' bacon-chain-compact' : ''}`}
               role="list"
               aria-label="Kevin Bacon connection path"
             >
+              <img src={FILM_ROLL_IMAGE_URL} alt="" className="bacon-reel" aria-hidden="true" />
+
+              <a
+                href={tmdbPersonHref(result.actor.person.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bacon-person-node bacon-person-node-large bacon-chain-endpoint"
+                role="listitem"
+              >
+                <span className="actor-spotlight-portrait-shell bacon-person-medallion">
+                  {getProfileImageUrl(result.actor.person.profilePath) ? (
+                    <img src={getProfileImageUrl(result.actor.person.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+                  ) : (
+                    <span className="actor-spotlight-fallback" aria-hidden="true">
+                      {getInitials(result.actor.person.name)}
+                    </span>
+                  )}
+                </span>
+                <span className="bacon-person-name">{result.actor.person.name}</span>
+              </a>
+
               {result.steps.map((step, index) => {
                 const isFinalStep = index === result.steps.length - 1
 
@@ -188,27 +188,27 @@ export const BaconPathSection = ({
                   </Fragment>
                 )
               })}
+
+              <a
+                href={tmdbPersonHref(finalActor.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bacon-person-node bacon-person-node-large bacon-chain-endpoint"
+                role="listitem"
+              >
+                <span className="actor-spotlight-portrait-shell bacon-person-medallion">
+                  {getProfileImageUrl(finalActor.profilePath) ? (
+                    <img src={getProfileImageUrl(finalActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+                  ) : (
+                    <span className="actor-spotlight-fallback" aria-hidden="true">
+                      {getInitials(finalActor.name)}
+                    </span>
+                  )}
+                </span>
+                <span className="bacon-person-name">{finalActor.name}</span>
+              </a>
             </div>
           </div>
-
-          <a
-            href={tmdbPersonHref(finalActor.id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bacon-person-node bacon-person-node-large bacon-filmstrip-endpoint"
-            role="listitem"
-          >
-            <span className="actor-spotlight-portrait-shell bacon-person-medallion">
-              {getProfileImageUrl(finalActor.profilePath) ? (
-                <img src={getProfileImageUrl(finalActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-              ) : (
-                <span className="actor-spotlight-fallback" aria-hidden="true">
-                  {getInitials(finalActor.name)}
-                </span>
-              )}
-            </span>
-            <span className="bacon-person-name">{finalActor.name}</span>
-          </a>
         </div>
       ) : (
         <div className="bacon-endpoint-only">
