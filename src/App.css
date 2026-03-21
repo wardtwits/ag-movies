@@ -2245,7 +2245,38 @@ input:focus-visible,
     text-underline-offset: 0.16rem;
   }
 
+  .results-share-button {
+    width: auto;
+    min-height: auto;
+    padding: 0.08rem 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    justify-content: flex-start;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.3;
+    text-decoration: underline;
+    text-underline-offset: 0.16rem;
+  }
+
+  .results-share-button .action-link-icon {
+    width: 0.88rem;
+    height: 0.88rem;
+  }
+
   .clear-search-button-mobile-link:hover:not(:disabled) {
+    border-color: transparent;
+    background: none;
+    color: var(--gold-soft);
+    transform: none;
+  }
+
+  .results-share-button:hover {
     border-color: transparent;
     background: none;
     color: var(--gold-soft);
