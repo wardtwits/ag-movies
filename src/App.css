@@ -2193,12 +2193,53 @@ input:focus-visible,
     padding-inline: 1rem;
   }
 
+  .search-panel-primary-mode-actors.search-panel-primary-with-clear .search-panel-toolbar {
+    order: 1;
+    justify-content: center;
+  }
+
+  .clear-search-button-actors {
+    width: auto;
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .clear-search-button-actors:hover:not(:disabled) {
+    border-color: transparent;
+    background: none;
+    color: var(--gold-soft);
+    transform: none;
+  }
+
   .actor-spotlight {
+    gap: 0.85rem;
     padding: 1rem;
   }
 
+  .actor-spotlight-header,
+  .actor-spotlight-filmstrip-label,
   .actor-spotlight-filmstrip {
-    min-height: 13rem;
+    display: none;
+  }
+
+  .actor-spotlight-stage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    align-items: start;
+  }
+
+  .actor-spotlight-actor {
+    gap: 0.55rem;
   }
 
   .actor-spotlight-card {
@@ -2216,6 +2257,21 @@ input:focus-visible,
   .actor-spotlight-portrait-shell {
     width: 100%;
     max-width: 6.6rem;
+  }
+
+  .actor-spotlight-nameplate {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text);
+    font-size: 0.98rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.15;
+    text-transform: none;
   }
 
   .title-spotlight {

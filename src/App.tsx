@@ -354,6 +354,7 @@ const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
 }
 
 const SHOW_RANDOM_MATCH = false
+const MOBILE_LAYOUT_QUERY = '(max-width: 47.99rem)'
 
 const easeInOutCubic = (progress: number): number =>
   progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2
@@ -376,6 +377,11 @@ function App() {
   const [shareCopyState, setShareCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const [aboutOpen, setAboutOpen] = useState(false)
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(MOBILE_LAYOUT_QUERY).matches
+      : false,
+  )
   const searchRequestIdRef = useRef(0)
   const lastCompletedSearchKeyRef = useRef<string | null>(null)
   const shareCopyResetTimeoutRef = useRef<number | null>(null)
@@ -480,6 +486,28 @@ function App() {
 
     if (displayedComparisonState.kind === 'actors') {
       const sortedTitles = [...displayedComparisonState.result.sharedTitles].sort(compareTitlesForResults)
+      const spotlightMetaById = new Map(
+        (actorSpotlight?.titles ?? []).map((title) => [title.id, title.metaLabel] as const),
+      )
+
+      if (isMobileViewport) {
+        const cards = sortedTitles.map((title) => {
+          const card = mapSharedTitleToCard(title)
+          const metaLabel = spotlightMetaById.get(card.id)
+          return metaLabel ? { ...card, metaLabel } : card
+        })
+
+        return cards.length
+          ? [
+              {
+                id: 'shared-titles',
+                title: 'Shared Films & Shows',
+                cards,
+              },
+            ]
+          : []
+      }
+
       const spotlightKeys = new Set(actorSpotlight?.titles.map((title) => title.id) ?? [])
       const remainingCards = sortedTitles
         .filter((title) => !spotlightKeys.has(getSharedTitleKey(title)))
@@ -524,7 +552,7 @@ function App() {
     }
 
     return groups
-  }, [actorSpotlight, displayedComparisonState, titleSpotlight])
+  }, [actorSpotlight, displayedComparisonState, isMobileViewport, titleSpotlight])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
   const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0 && !showingHiddenExtras
@@ -548,6 +576,27 @@ function App() {
         window.clearTimeout(shareCopyResetTimeoutRef.current)
       }
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_LAYOUT_QUERY)
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobileViewport(event.matches)
+    }
+
+    setIsMobileViewport(mediaQuery.matches)
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
   }, [])
 
   useEffect(() => {
@@ -1027,7 +1076,9 @@ function App() {
   const clearSelectionButton = (
     <button
       type="button"
-      className={`clear-search-button clear-search-button-inline${shouldShowClearButton ? '' : ' clear-search-button-hidden'}`}
+      className={`clear-search-button clear-search-button-inline${mode === 'actors' ? ' clear-search-button-actors' : ''}${
+        shouldShowClearButton ? '' : ' clear-search-button-hidden'
+      }`}
       onClick={shouldShowClearButton ? resetSelectionsAndResults : undefined}
       disabled={!canClearSearchFields || !shouldShowClearButton}
       aria-hidden={!shouldShowClearButton}
@@ -1055,7 +1106,7 @@ function App() {
               ) : null}
 
               <div
-                className={`search-panel-primary search-panel-primary-dual search-panel-primary-with-clear${
+                className={`search-panel-primary search-panel-primary-dual search-panel-primary-with-clear search-panel-primary-mode-${mode}${
                   shouldShowClearButton ? '' : ' search-panel-primary-with-reserved-clear'
                 }`}
               >
