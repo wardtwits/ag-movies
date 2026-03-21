@@ -763,18 +763,18 @@ input:focus-visible,
 
 .bacon-degree-summary {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;
   justify-self: start;
   align-self: start;
   grid-column: 1;
   grid-row: 1;
-  gap: 0.5rem;
+  gap: 5px;
   min-width: 0;
   text-align: left;
 }
 
 .bacon-degree-label {
-  margin-bottom: 0.52rem;
+  align-self: center;
   text-align: left;
 }
 
@@ -786,11 +786,12 @@ input:focus-visible,
 }
 
 .bacon-degree {
-  font-family: 'Manrope', 'Avenir Next', 'Segoe UI', sans-serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: clamp(5.4rem, 15vw, 6.9rem);
-  line-height: 0.82;
-  font-weight: 700;
-  letter-spacing: -0.06em;
+  line-height: 0.74;
+  font-weight: 600;
+  letter-spacing: -0.075em;
+  font-variant-numeric: lining-nums;
   text-shadow: 0 0.08em 0.16em rgba(0, 0, 0, 0.35);
 }
 
