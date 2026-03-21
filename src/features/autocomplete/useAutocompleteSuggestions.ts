@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { searchMediaTitles, searchPeople } from '../../api/tmdbClient'
+import { searchActors, searchAutocompleteActors, searchMediaTitles, searchPeople } from '../../api/tmdbClient'
 import type { MediaTitle, PersonSummary } from '../../domain/media'
 
 export const AUTOCOMPLETE_MIN_QUERY_LENGTH = 3
@@ -35,6 +35,18 @@ export const fetchMediaSuggestions = (query: string, signal: AbortSignal): Promi
 
 export const fetchPersonSuggestions = (query: string, signal: AbortSignal): Promise<PersonSummary[]> =>
   loadCachedSuggestions(personSuggestionCache, query, signal, searchPeople)
+
+const actorSuggestionCache = new Map<string, PersonSummary[]>()
+
+export const fetchActorSuggestions = (query: string, signal: AbortSignal): Promise<PersonSummary[]> =>
+  loadCachedSuggestions(actorSuggestionCache, query, signal, searchActors)
+
+const autocompleteActorSuggestionCache = new Map<string, PersonSummary[]>()
+
+export const fetchAutocompleteActorSuggestions = (
+  query: string,
+  signal: AbortSignal,
+): Promise<PersonSummary[]> => loadCachedSuggestions(autocompleteActorSuggestionCache, query, signal, searchAutocompleteActors)
 
 interface UseAutocompleteSuggestionsOptions<T> {
   enabled: boolean

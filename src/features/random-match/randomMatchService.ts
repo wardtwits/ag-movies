@@ -1,5 +1,6 @@
 import { fetchPopularPeople } from '../../api/tmdbClient'
 import type { PersonSummary } from '../../domain/media'
+import { isEligibleBaconPerson } from '../../domain/mediaFilters'
 import type { CommonCastResult } from '../common-cast/types'
 import { findCommonCastFromMedia } from '../common-cast/commonCastService'
 import type { CommonTitlesResult } from '../common-titles/types'
@@ -46,16 +47,24 @@ const usedRandomBaconActorIds = new Set<number>()
 
 const isKevinBacon = (person: PersonSummary): boolean => person.name.trim().toLowerCase() === 'kevin bacon'
 
-const isEligibleRandomBaconActor = (person: PersonSummary, excludedActorId?: number): boolean => {
+const isExcludedRandomBaconActor = (person: PersonSummary, excludedActorId?: number): boolean => {
   if (excludedActorId !== undefined && person.id === excludedActorId) {
-    return false
+    return true
   }
 
   if (isKevinBacon(person)) {
+    return true
+  }
+
+  return false
+}
+
+const isEligibleRandomBaconActor = (person: PersonSummary, excludedActorId?: number): boolean => {
+  if (isExcludedRandomBaconActor(person, excludedActorId)) {
     return false
   }
 
-  return !person.knownForDepartment || person.knownForDepartment === 'Acting'
+  return isEligibleBaconPerson(person)
 }
 
 const pickRandomPerson = (people: PersonSummary[]): PersonSummary | null => {
@@ -107,7 +116,7 @@ export const findRandomBaconActor = async (excludedActor?: PersonSummary | null)
   const excludedActorId = excludedActor?.id
 
   const curatedSelection = pickRandomPerson(
-    CURATED_RANDOM_BACON_ACTORS.filter((person) => isEligibleRandomBaconActor(person, excludedActorId)),
+    CURATED_RANDOM_BACON_ACTORS.filter((person) => !isExcludedRandomBaconActor(person, excludedActorId)),
   )
   if (curatedSelection) {
     return curatedSelection

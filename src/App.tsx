@@ -13,6 +13,8 @@ import { TmdbFooter } from './components/TmdbFooter'
 import { isStarBillingOrder } from './domain/billing'
 import type { MediaTitle, PersonSummary } from './domain/media'
 import {
+  fetchActorSuggestions,
+  fetchAutocompleteActorSuggestions,
   AUTOCOMPLETE_MIN_QUERY_LENGTH,
   fetchMediaSuggestions,
   fetchPersonSuggestions,
@@ -41,6 +43,7 @@ import {
   type ShareComparisonState,
   type ShareSelection,
 } from './features/share/shareState'
+import { configureNativeAppChrome, isNativeApp, shareNativeLink } from './platform/native'
 import './App.css'
 
 type SearchSelection = MediaTitle | PersonSummary
@@ -343,14 +346,14 @@ const compareExtraActorsForTitles = (left: SharedActor, right: SharedActor): num
 }
 
 const PRIMARY_PLACEHOLDERS: Record<SearchMode, string> = {
-  actors: 'Search Actor 1',
-  titles: 'Search Title 1',
-  bacon: 'Enter an actor name',
+  actors: 'Actor 1',
+  titles: 'Film or Show 1',
+  bacon: "Actor's name",
 }
 
 const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
-  actors: 'Search Actor 2',
-  titles: 'Search Title 2',
+  actors: 'Actor 2',
+  titles: 'Film or Show 2',
 }
 
 const SHOW_RANDOM_MATCH = false
@@ -386,7 +389,9 @@ function App() {
   const lastCompletedSearchKeyRef = useRef<string | null>(null)
   const shareCopyResetTimeoutRef = useRef<number | null>(null)
   const resultsScrollTargetRef = useRef<HTMLDivElement | null>(null)
+  const topScrollTargetRef = useRef<HTMLElement | null>(null)
   const lastScrolledResultTokenRef = useRef(0)
+  const [showBackToTopLink, setShowBackToTopLink] = useState(false)
 
   const primaryMediaAutocomplete = useAutocompleteSuggestions(primaryQuery, {
     enabled: mode === 'titles',
@@ -398,11 +403,16 @@ function App() {
   })
   const primaryPersonAutocomplete = useAutocompleteSuggestions(primaryQuery, {
     enabled: mode !== 'titles',
-    loader: fetchPersonSuggestions,
+    loader:
+      mode === 'bacon'
+        ? fetchActorSuggestions
+        : mode === 'actors'
+          ? fetchAutocompleteActorSuggestions
+          : fetchPersonSuggestions,
   })
   const secondaryPersonAutocomplete = useAutocompleteSuggestions(secondaryQuery, {
     enabled: mode === 'actors',
-    loader: fetchPersonSuggestions,
+    loader: fetchAutocompleteActorSuggestions,
   })
 
   const activeSearchKey = useMemo(
@@ -570,20 +580,34 @@ function App() {
   }, [actorSpotlight, displayedComparisonState, isMobileViewport, titleSpotlight])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
+  const hasRenderableResultContent =
+    mode === 'bacon'
+      ? Boolean(baconResult)
+      : Boolean(actorSpotlight || titleSpotlight || resultGroups.some((group) => group.cards.length > 0))
+  const canShowDesktopBackToTop = !isMobileViewport && !isNativeApp() && hasRenderableResultContent
   const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0 && !showingHiddenExtras
-  const shouldShowClearButton = mode !== 'bacon' && resultCount > 0
+  const shouldShowClearButton = mode !== 'bacon' && canClearSearchFields
   const shouldShowCopyResultsLink =
     !isLoading &&
     !errorMessage &&
     ((mode !== 'bacon' && activeSearchKey !== null && hasSearched) || (mode === 'bacon' && baconResult !== null))
-  const copyResultsLinkLabel =
-    shareCopyState === 'copied' ? 'Copied' : shareCopyState === 'error' ? 'Unable to copy' : 'Copy Results Link'
+  const copyResultsLinkLabel = isNativeApp()
+    ? 'Share Results'
+    : shareCopyState === 'copied'
+      ? 'Copied'
+      : shareCopyState === 'error'
+        ? 'Unable to copy'
+        : 'Copy Results Link'
+
+  useEffect(() => {
+    void configureNativeAppChrome().catch(() => undefined)
+  }, [])
   const helperText =
     mode === 'actors'
-      ? 'Comapre two performers to uncover the titles that connect them.'
+      ? 'Find the titles connecting two performers.'
       : mode === 'titles'
-        ? 'Compare two movies or shows to reveal the cast they share.'
-        : 'Trace a performer back to Kevin Bacon through shared screen credits.'
+        ? 'Find the shared cast of two titles.'
+        : "Find a performer's path to Kevin Bacon."
 
   useEffect(() => {
     return () => {
@@ -674,10 +698,8 @@ function App() {
       typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let frameId = 0
 
-    const startScroll = () => {
-      const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0
+    const animateScrollToY = (targetY: number) => {
       const startY = window.scrollY
-      const targetY = Math.max(0, target.getBoundingClientRect().top + startY - scrollMarginTop)
 
       if (prefersReducedMotion || Math.abs(targetY - startY) < 8) {
         window.scrollTo({ top: targetY, behavior: 'auto' })
@@ -704,12 +726,81 @@ function App() {
       frameId = window.requestAnimationFrame(step)
     }
 
+    const startScroll = () => {
+      const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0
+      const startY = window.scrollY
+      const targetY = Math.max(0, target.getBoundingClientRect().top + startY - scrollMarginTop)
+      animateScrollToY(targetY)
+    }
+
     frameId = window.requestAnimationFrame(startScroll)
 
     return () => {
       window.cancelAnimationFrame(frameId)
     }
   }, [isLoading, revealedResultToken])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !canShowDesktopBackToTop) {
+      setShowBackToTopLink(false)
+      return
+    }
+
+    const updateScrollability = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight > 24
+      setShowBackToTopLink(scrollable)
+    }
+
+    updateScrollability()
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollability) : null
+    resizeObserver?.observe(document.documentElement)
+    window.addEventListener('resize', updateScrollability)
+
+    return () => {
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', updateScrollability)
+    }
+  }, [canShowDesktopBackToTop, revealedResultToken])
+
+  const handleBackToTop = () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const target = topScrollTargetRef.current
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const startY = window.scrollY
+    const targetY = target
+      ? Math.max(0, target.getBoundingClientRect().top + startY - 20)
+      : 0
+
+    if (prefersReducedMotion || Math.abs(targetY - startY) < 8) {
+      window.scrollTo({ top: targetY, behavior: 'auto' })
+      return
+    }
+
+    const distance = targetY - startY
+    const duration = Math.min(1100, Math.max(760, Math.abs(distance) * 0.65))
+    const animationStart = window.performance.now()
+
+    const step = (timestamp: number) => {
+      const progress = Math.min(1, (timestamp - animationStart) / duration)
+      const easedProgress = easeInOutCubic(progress)
+      window.scrollTo({
+        top: startY + distance * easedProgress,
+        behavior: 'auto',
+      })
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step)
+      }
+    }
+
+    window.requestAnimationFrame(step)
+  }
 
   useEffect(() => {
     if (mode === 'bacon' || !comparisonState || !filterExtras || showingHiddenExtras) {
@@ -833,6 +924,17 @@ function App() {
     })
 
     try {
+      if (
+        await shareNativeLink({
+          title: 'CastLink Results',
+          text: 'Check out these CastLink results.',
+          url: shareUrl,
+        })
+      ) {
+        setShareCopyState('idle')
+        return
+      }
+
       await copyTextToClipboard(shareUrl)
       setShareCopyState('copied')
     } catch {
@@ -1092,7 +1194,7 @@ function App() {
     <button
       type="button"
       className={`clear-search-button clear-search-button-inline${
-        mode === 'actors' && isMobileViewport ? ' clear-search-button-mobile-link' : ''
+        mode !== 'bacon' && isMobileViewport ? ' clear-search-button-mobile-link' : ''
       }${shouldShowClearButton ? '' : ' clear-search-button-hidden'}`}
       onClick={shouldShowClearButton ? resetSelectionsAndResults : undefined}
       disabled={!canClearSearchFields || !shouldShowClearButton}
@@ -1108,7 +1210,7 @@ function App() {
       <AppNav onAboutOpen={() => setAboutOpen(true)} onHowItWorksOpen={() => setHowItWorksOpen(true)} />
 
       <main className="app-main">
-        <section className={`hero-stage hero-stage-${mode}`}>
+        <section className={`hero-stage hero-stage-${mode}`} ref={topScrollTargetRef}>
           <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
         <section className={`search-panel search-panel-mode-${mode}`}>
@@ -1164,6 +1266,8 @@ function App() {
               showCopyResultsLink={shouldShowCopyResultsLink}
               copyResultsLinkLabel={copyResultsLinkLabel}
               onCopyResultsLink={handleCopyResultsLink}
+              showBackToTopLink={showBackToTopLink}
+              onBackToTop={handleBackToTop}
             />
           </div>
         ) : (
@@ -1205,6 +1309,8 @@ function App() {
               showCopyResultsLink={shouldShowCopyResultsLink}
               copyResultsLinkLabel={copyResultsLinkLabel}
               onCopyResultsLink={handleCopyResultsLink}
+              showBackToTopLink={showBackToTopLink}
+              onBackToTop={handleBackToTop}
             />
           </div>
         )}

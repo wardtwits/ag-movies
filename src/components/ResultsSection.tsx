@@ -25,6 +25,8 @@ interface ResultsSectionProps {
   showCopyResultsLink: boolean
   copyResultsLinkLabel: string
   onCopyResultsLink: () => void
+  showBackToTopLink: boolean
+  onBackToTop: () => void
 }
 
 const LOADING_PLACEHOLDERS = Array.from({ length: 6 }, (_, index) => `skeleton-${index}`)
@@ -45,6 +47,8 @@ export const ResultsSection = ({
   showCopyResultsLink,
   copyResultsLinkLabel,
   onCopyResultsLink,
+  showBackToTopLink,
+  onBackToTop,
 }: ResultsSectionProps) => {
   if (!hasSearched) {
     return null
@@ -111,6 +115,14 @@ export const ResultsSection = ({
               </div>
             </section>
           ))}
+
+          {showBackToTopLink ? (
+            <div className="results-footer">
+              <button type="button" className="results-back-to-top-link" onClick={onBackToTop}>
+                Back to Top
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="results-empty">

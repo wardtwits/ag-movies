@@ -17,6 +17,8 @@ interface BaconPathSectionProps {
   showCopyResultsLink: boolean
   copyResultsLinkLabel: string
   onCopyResultsLink: () => void
+  showBackToTopLink: boolean
+  onBackToTop: () => void
 }
 
 const getProfileImageUrl = (path?: string | null): string | null => (path ? `${PROFILE_IMAGE_BASE_URL}${path}` : null)
@@ -69,6 +71,8 @@ export const BaconPathSection = ({
   showCopyResultsLink,
   copyResultsLinkLabel,
   onCopyResultsLink,
+  showBackToTopLink,
+  onBackToTop,
 }: BaconPathSectionProps) => {
   if (!isLoading && !errorMessage && !result) {
     return null
@@ -231,6 +235,14 @@ export const BaconPathSection = ({
           </a>
         </div>
       )}
+
+      {showBackToTopLink ? (
+        <div className="results-footer">
+          <button type="button" className="results-back-to-top-link" onClick={onBackToTop}>
+            Back to Top
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }

@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 docs/
+docs/superpowers/specs/
+docs/superpowers/specs/*.md
 ios/
 *.local
 

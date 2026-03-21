@@ -13,15 +13,27 @@
 
 html {
   min-width: 20rem;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
   min-width: 20rem;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #04060b;
+}
+
+html.native-app {
+  overflow-y: auto;
+}
+
+html.native-app body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }

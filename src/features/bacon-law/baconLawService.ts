@@ -2,10 +2,15 @@ import {
   fetchCastForMedia,
   fetchCreditsForPerson,
   fetchPersonSummaryById,
-  resolveActor,
+  resolveBaconActor,
   resolveActorToCredits,
 } from '../../api/tmdbClient'
 import type { CastMember, MediaCredit, PersonSummary, PersonWithCredits } from '../../domain/media'
+import {
+  isEligibleBaconCastMember,
+  isEligibleBaconMediaCredit,
+  isEligibleBaconPerson,
+} from '../../domain/mediaFilters'
 import type { BaconConnectionStep, BaconLawResult } from './types'
 
 const KEVIN_BACON_QUERY = 'Kevin Bacon'
@@ -62,7 +67,8 @@ const toPersonSummary = (member: CastMember): PersonSummary => ({
 
 const mediaKey = (credit: MediaCredit): string => `${credit.mediaType}-${credit.id}`
 
-const filterBaconCredits = (credits: MediaCredit[]): MediaCredit[] => credits.filter((credit) => credit.mediaType === 'movie')
+const filterBaconCredits = (credits: MediaCredit[]): MediaCredit[] =>
+  credits.filter((credit) => credit.mediaType === 'movie' && isEligibleBaconMediaCredit(credit))
 
 const scoreCredit = (credit: MediaCredit): number => {
   const orderScore = Math.max(0, 24 - Math.min(credit.order, 24))
@@ -77,7 +83,7 @@ const selectCastForExpansion = (
   currentActorId: number,
   priorityActorIds: ReadonlySet<number>,
 ): CastMember[] => {
-  const filtered = cast.filter((member) => member.id !== currentActorId)
+  const filtered = cast.filter((member) => member.id !== currentActorId && isEligibleBaconCastMember(member))
   const selected = filtered.slice(0, MAX_CAST_PER_TITLE)
   const selectedIds = new Set(selected.map((member) => member.id))
 
@@ -95,7 +101,9 @@ const loadPersonWithCredits = async (person: PersonSummary): Promise<PersonWithC
   getOrSetCachedPromise(personCreditsCache, person.id, async () => {
     const [credits, enrichedPerson] = await Promise.all([
       fetchCreditsForPerson(person.id),
-      person.profilePath ? Promise.resolve(person) : fetchPersonSummaryById(person.id).catch(() => person),
+      person.profilePath && person.knownForDepartment
+        ? Promise.resolve(person)
+        : fetchPersonSummaryById(person.id).catch(() => person),
     ])
 
     return {
@@ -318,6 +326,10 @@ const findDirectConnection = (
 export const findBaconConnectionFromPerson = async (actorPerson: PersonSummary): Promise<BaconLawResult> => {
   const [actor, kevinBacon] = await Promise.all([loadPersonWithCredits(actorPerson), loadKevinBacon()])
 
+  if (!isEligibleBaconPerson(actor.person)) {
+    throw new Error('Please choose a credited actor from the Bacon suggestions.')
+  }
+
   if (actor.person.id === kevinBacon.person.id) {
     return {
       actor,
@@ -390,6 +402,6 @@ export const findBaconConnectionFromPerson = async (actorPerson: PersonSummary):
 }
 
 export const findBaconConnection = async (actorQuery: string): Promise<BaconLawResult> => {
-  const actor = await resolveActor(actorQuery)
+  const actor = await resolveBaconActor(actorQuery)
   return findBaconConnectionFromPerson(actor)
 }

@@ -7,7 +7,12 @@ import type {
   PersonSummary,
   PersonWithCredits,
 } from '../domain/media'
-import { isVisibleCastMember, isVisibleMediaCredit, isVisibleMediaTitle } from '../domain/mediaFilters'
+import {
+  isEligibleBaconPerson,
+  isVisibleCastMember,
+  isVisibleMediaCredit,
+  isVisibleMediaTitle,
+} from '../domain/mediaFilters'
 import type {
   TmdbAggregateCastMember,
   TmdbAggregateCreditsResponse,
@@ -282,6 +287,11 @@ export const searchPeople = async (query: string, signal?: AbortSignal): Promise
     .sort((left, right) => scorePersonMatch(right, query) - scorePersonMatch(left, query))
 }
 
+export const searchActors = async (query: string, signal?: AbortSignal): Promise<PersonSummary[]> => {
+  const people = await searchPeople(query, signal)
+  return people.filter(isEligibleBaconPerson)
+}
+
 export const fetchPopularPeople = async (page = 1): Promise<PersonSummary[]> => {
   const response = await requestTmdb<TmdbPersonSearchResponse>('/person/popular', {
     language: 'en-US',
@@ -324,6 +334,20 @@ export const resolveActor = async (query: string): Promise<PersonSummary> => {
   const matches = await searchPeople(cleanQuery)
   if (!matches.length) {
     throw new Error(`No actor was found for "${cleanQuery}".`)
+  }
+
+  return pickBestPersonMatch(cleanQuery, matches)
+}
+
+export const resolveBaconActor = async (query: string): Promise<PersonSummary> => {
+  const cleanQuery = query.trim()
+  if (!cleanQuery) {
+    throw new Error('Please enter an actor name.')
+  }
+
+  const matches = await searchActors(cleanQuery)
+  if (!matches.length) {
+    throw new Error(`No credited actor was found for "${cleanQuery}".`)
   }
 
   return pickBestPersonMatch(cleanQuery, matches)
@@ -407,6 +431,53 @@ export const fetchCreditsForPerson = async (
     }
     return left.title.localeCompare(right.title)
   })
+}
+
+const ACTOR_AUTOCOMPLETE_MIN_VISIBLE_CREDITS = 3
+const ACTOR_AUTOCOMPLETE_CANDIDATE_LIMIT = 12
+const actorAutocompleteCreditCountCache = new Map<number, Promise<number>>()
+
+const fetchVisibleCreditCountForPerson = (personId: number): Promise<number> => {
+  const cached = actorAutocompleteCreditCountCache.get(personId)
+  if (cached) {
+    return cached
+  }
+
+  const request = fetchCreditsForPerson(personId)
+    .then((credits) => credits.length)
+    .catch(() => 0)
+
+  actorAutocompleteCreditCountCache.set(personId, request)
+  return request
+}
+
+export const searchAutocompleteActors = async (
+  query: string,
+  signal?: AbortSignal,
+): Promise<PersonSummary[]> => {
+  const candidates = (await searchPeople(query, signal))
+    .filter(isEligibleBaconPerson)
+    .filter((person) => Boolean(person.profilePath))
+    .slice(0, ACTOR_AUTOCOMPLETE_CANDIDATE_LIMIT)
+
+  if (signal?.aborted) {
+    throw new DOMException('Autocomplete request aborted.', 'AbortError')
+  }
+
+  const creditCounts = await Promise.all(
+    candidates.map(async (person) => ({
+      person,
+      creditCount: await fetchVisibleCreditCountForPerson(person.id),
+    })),
+  )
+
+  if (signal?.aborted) {
+    throw new DOMException('Autocomplete request aborted.', 'AbortError')
+  }
+
+  return creditCounts
+    .filter(({ creditCount }) => creditCount >= ACTOR_AUTOCOMPLETE_MIN_VISIBLE_CREDITS)
+    .map(({ person }) => person)
 }
 
 export const resolveTitleToCast = async (
