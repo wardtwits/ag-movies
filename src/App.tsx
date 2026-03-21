@@ -1091,9 +1091,9 @@ function App() {
   const clearSelectionButton = (
     <button
       type="button"
-      className={`clear-search-button clear-search-button-inline${mode === 'actors' ? ' clear-search-button-actors' : ''}${
-        shouldShowClearButton ? '' : ' clear-search-button-hidden'
-      }`}
+      className={`clear-search-button clear-search-button-inline${
+        mode === 'actors' && isMobileViewport ? ' clear-search-button-mobile-link' : ''
+      }${shouldShowClearButton ? '' : ' clear-search-button-hidden'}`}
       onClick={shouldShowClearButton ? resetSelectionsAndResults : undefined}
       disabled={!canClearSearchFields || !shouldShowClearButton}
       aria-hidden={!shouldShowClearButton}

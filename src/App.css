@@ -2195,13 +2195,15 @@ input:focus-visible,
 
   .search-panel-primary-mode-actors.search-panel-primary-with-clear .search-panel-toolbar {
     order: 1;
+    width: 100%;
     justify-content: center;
+    margin-top: 0.1rem;
   }
 
-  .clear-search-button-actors {
+  .clear-search-button-mobile-link {
     width: auto;
     min-height: auto;
-    padding: 0;
+    padding: 0.08rem 0;
     border: 0;
     border-radius: 0;
     background: none;
@@ -2210,11 +2212,14 @@ input:focus-visible,
     color: var(--text-muted);
     font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
+    line-height: 1.3;
     text-transform: uppercase;
+    text-decoration: underline;
+    text-underline-offset: 0.16rem;
   }
 
-  .clear-search-button-actors:hover:not(:disabled) {
+  .clear-search-button-mobile-link:hover:not(:disabled) {
     border-color: transparent;
     background: none;
     color: var(--gold-soft);
