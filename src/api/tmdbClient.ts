@@ -32,6 +32,27 @@ const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 export type VisibilityMode = 'visible-only' | 'all'
 
 const normalizeText = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]/g, '')
+const stripLeadingArticle = (value: string): string => value.replace(/^\s*(?:a|an|the)\s+/i, '')
+
+const scoreNormalizedTextMatch = (candidate: string, query: string): number => {
+  if (!query) {
+    return 0
+  }
+
+  if (candidate === query) {
+    return 100
+  }
+
+  if (candidate.startsWith(query)) {
+    return 35
+  }
+
+  if (candidate.includes(query)) {
+    return 18
+  }
+
+  return 0
+}
 
 const readBearerToken = (): string => {
   const token = import.meta.env.VITE_TMDB_BEARER_TOKEN as string | undefined
@@ -207,15 +228,16 @@ const requestTmdb = async <T>(
 const scoreMatch = (media: MediaTitle, rawQuery: string): number => {
   const query = normalizeText(rawQuery)
   const title = normalizeText(media.title)
+  const queryWithoutLeadingArticle = normalizeText(stripLeadingArticle(rawQuery))
+  const titleWithoutLeadingArticle = normalizeText(stripLeadingArticle(media.title))
 
   let score = Math.log1p(media.popularity) + Math.log1p(media.voteCount)
-  if (title === query) {
-    score += 100
-  } else if (title.startsWith(query)) {
-    score += 35
-  } else if (title.includes(query)) {
-    score += 18
-  }
+  score += Math.max(
+    scoreNormalizedTextMatch(title, query),
+    scoreNormalizedTextMatch(titleWithoutLeadingArticle, query),
+    scoreNormalizedTextMatch(title, queryWithoutLeadingArticle),
+    scoreNormalizedTextMatch(titleWithoutLeadingArticle, queryWithoutLeadingArticle),
+  )
 
   return score
 }

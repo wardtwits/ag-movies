@@ -16,10 +16,13 @@ interface SearchAutocompleteFieldProps {
   minimumQueryLength: number
   hasSearched: boolean
   trailingAction?: ReactNode
+  scrollToTopOnFocus?: boolean
   onChange: (value: string) => void
   onSelect: (entity: AutocompleteEntity) => void
   onClearSelection: () => void
 }
+
+const MOBILE_INPUT_SCROLL_QUERY = '(max-width: 47.99rem)'
 
 const isMediaTitle = (entity: AutocompleteEntity): entity is MediaTitle => 'mediaType' in entity
 
@@ -56,6 +59,7 @@ export const SearchAutocompleteField = ({
   minimumQueryLength,
   hasSearched,
   trailingAction,
+  scrollToTopOnFocus = false,
   onChange,
   onSelect,
   onClearSelection,
@@ -78,6 +82,30 @@ export const SearchAutocompleteField = ({
       document.activeElement.blur()
     }
   }, [])
+
+  const scrollFieldToTop = useCallback((inputElement: HTMLInputElement) => {
+    if (!scrollToTopOnFocus || typeof window === 'undefined') {
+      return
+    }
+
+    const isMobileViewport = window.matchMedia(MOBILE_INPUT_SCROLL_QUERY).matches
+    const isNativeApp = document.documentElement.classList.contains('native-app')
+
+    if (!isMobileViewport && !isNativeApp) {
+      return
+    }
+
+    window.setTimeout(() => {
+      const fieldElement = inputElement.closest('.search-field')
+
+      if (!(fieldElement instanceof HTMLElement)) {
+        return
+      }
+
+      const top = Math.max(window.scrollY + fieldElement.getBoundingClientRect().top - 12, 0)
+      window.scrollTo({ top, behavior: 'smooth' })
+    }, 260)
+  }, [scrollToTopOnFocus])
 
   const dropdownContent = useMemo(() => {
     if (isLoading) {
@@ -178,7 +206,10 @@ export const SearchAutocompleteField = ({
             name={`${inputKind}-search`}
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            onFocus={() => setIsFocused(true)}
+            onFocus={(event) => {
+              setIsFocused(true)
+              scrollFieldToTop(event.currentTarget)
+            }}
             onBlur={() => {
               window.setTimeout(() => setIsFocused(false), 100)
             }}

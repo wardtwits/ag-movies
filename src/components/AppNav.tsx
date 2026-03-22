@@ -172,10 +172,9 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen }: AppNavProps) => {
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="app-nav-drawer-header">
-                  <div className="app-nav-drawer-title-block">
-                    <p className="app-nav-drawer-eyebrow">Menu</p>
-                    <h2 id={drawerTitleId}>Site navigation</h2>
-                  </div>
+                  <h2 id={drawerTitleId} className="app-nav-drawer-title">
+                    Menu
+                  </h2>
                   <button
                     ref={closeButtonRef}
                     type="button"

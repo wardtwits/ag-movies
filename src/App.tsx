@@ -252,6 +252,10 @@ const buildActorSpotlightTitles = (titles: SharedTitle[]): ActorSpotlightTitleCa
     return []
   }
 
+  if (titles.length === 1) {
+    return [mapSharedTitleToCard(titles[0])]
+  }
+
   const sortedTitles = [...titles].sort(compareTitlesByPopularity)
   const starTitles = sortedTitles.filter((title) => isStarBillingOrder(title.leftOrder) || isStarBillingOrder(title.rightOrder))
   const preferredTitles = starTitles.length ? starTitles : sortedTitles
@@ -390,6 +394,7 @@ function App() {
   const shareCopyResetTimeoutRef = useRef<number | null>(null)
   const resultsScrollTargetRef = useRef<HTMLDivElement | null>(null)
   const topScrollTargetRef = useRef<HTMLElement | null>(null)
+  const searchPanelRef = useRef<HTMLElement | null>(null)
   const lastScrolledResultTokenRef = useRef(0)
   const [showBackToTopLink, setShowBackToTopLink] = useState(false)
 
@@ -421,6 +426,8 @@ function App() {
   )
 
   const isFilteringVisibleOnly = filterExtras && !showingHiddenExtras
+  const hasPrimarySearchInput = Boolean(primaryQuery.trim()) || primarySelection !== null
+  const hasSecondarySearchInput = Boolean(secondaryQuery.trim()) || secondarySelection !== null
   const canClearSearchFields =
     Boolean(primaryQuery.trim()) ||
     Boolean(secondaryQuery.trim()) ||
@@ -478,7 +485,7 @@ function App() {
 
     const featuredActors = displayedComparisonState.result.sharedActors.filter((actor) => actor.roleCategory !== 'extra-both')
     const actors = buildTitleSpotlightActors(featuredActors)
-    if (!actors.length && !isMobileViewport) {
+    if (!actors.length) {
       return null
     }
 
@@ -487,7 +494,7 @@ function App() {
       rightTitle: displayedComparisonState.result.right.media,
       actors,
     }
-  }, [displayedComparisonState, isMobileViewport])
+  }, [displayedComparisonState])
 
   const resultGroups = useMemo<ResultCardGroup[]>(() => {
     if (!displayedComparisonState) {
@@ -580,13 +587,17 @@ function App() {
   }, [actorSpotlight, displayedComparisonState, isMobileViewport, titleSpotlight])
 
   const resultCount = getComparisonResultCount(displayedComparisonState)
+  const allComparisonResultCount = getComparisonResultCount(comparisonState)
+  const filteredComparisonResultCount = getComparisonResultCount(filteredComparisonState)
   const hasRenderableResultContent =
     mode === 'bacon'
       ? Boolean(baconResult)
       : Boolean(actorSpotlight || titleSpotlight || resultGroups.some((group) => group.cards.length > 0))
-  const canShowDesktopBackToTop = !isMobileViewport && !isNativeApp() && hasRenderableResultContent
-  const shouldShowFilterToggle = mode !== 'bacon' && resultCount > 0 && !showingHiddenExtras
-  const shouldShowClearButton = mode !== 'bacon' && canClearSearchFields
+  const canShowBackToTop = !isNativeApp() && hasRenderableResultContent
+  const hasFilterableExtras =
+    mode !== 'bacon' && allComparisonResultCount > filteredComparisonResultCount && filteredComparisonResultCount > 0
+  const shouldShowFilterToggle = mode !== 'bacon' && !showingHiddenExtras && hasFilterableExtras
+  const shouldShowClearButton = mode !== 'bacon' && hasPrimarySearchInput && hasSecondarySearchInput
   const shouldShowCopyResultsLink =
     !isLoading &&
     !errorMessage &&
@@ -741,27 +752,42 @@ function App() {
   }, [isLoading, revealedResultToken])
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !canShowDesktopBackToTop) {
+    if (typeof window === 'undefined' || !canShowBackToTop) {
       setShowBackToTopLink(false)
       return
     }
 
     const updateScrollability = () => {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight > 24
-      setShowBackToTopLink(scrollable)
+      const visibilityTarget = searchPanelRef.current ?? topScrollTargetRef.current
+      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight
+
+      if (!visibilityTarget || maxScrollY <= 24) {
+        setShowBackToTopLink(false)
+        return
+      }
+
+      const visibilityTargetBottom = visibilityTarget.getBoundingClientRect().bottom + window.scrollY
+      const searchPanelHiddenAtBottom = maxScrollY > visibilityTargetBottom - 24
+      setShowBackToTopLink(searchPanelHiddenAtBottom)
     }
 
     updateScrollability()
 
     const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollability) : null
     resizeObserver?.observe(document.documentElement)
+    if (topScrollTargetRef.current) {
+      resizeObserver?.observe(topScrollTargetRef.current)
+    }
+    if (searchPanelRef.current) {
+      resizeObserver?.observe(searchPanelRef.current)
+    }
     window.addEventListener('resize', updateScrollability)
 
     return () => {
       resizeObserver?.disconnect()
       window.removeEventListener('resize', updateScrollability)
     }
-  }, [canShowDesktopBackToTop, revealedResultToken])
+  }, [canShowBackToTop, revealedResultToken])
 
   const handleBackToTop = () => {
     if (typeof window === 'undefined') {
@@ -1164,6 +1190,7 @@ function App() {
         minimumQueryLength={AUTOCOMPLETE_MIN_QUERY_LENGTH}
         hasSearched={primaryFieldConfig.hasSearched}
         trailingAction={baconTrailingAction}
+        scrollToTopOnFocus
         onChange={handlePrimaryInputChange}
         onSelect={handlePrimarySelect}
         onClearSelection={clearPrimarySelection}
@@ -1213,14 +1240,12 @@ function App() {
         <section className={`hero-stage hero-stage-${mode}`} ref={topScrollTargetRef}>
           <HeroHeader mode={mode} onModeChange={handleModeChange} />
 
-        <section className={`search-panel search-panel-mode-${mode}`}>
+        <section className={`search-panel search-panel-mode-${mode}`} ref={searchPanelRef}>
           {mode !== 'bacon' ? (
             <>
-              {!shouldShowClearButton ? (
-                <div className="search-panel-toolbar search-panel-toolbar-helper">
-                  <p className="search-panel-helper-text">{helperText}</p>
-                </div>
-              ) : null}
+              <div className="search-panel-toolbar search-panel-toolbar-helper">
+                <p className="search-panel-helper-text">{helperText}</p>
+              </div>
 
               <div
                 className={`search-panel-primary search-panel-primary-dual search-panel-primary-with-clear search-panel-primary-mode-${mode}${

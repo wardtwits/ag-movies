@@ -3,219 +3,376 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#04060b" />
   <title>CastLink Privacy Policy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
   <style>
     :root {
-      --bg: #ffffff;
-      --panel: #ffffff;
-      --text: #202124;
-      --muted: #5f6368;
-      --accent: #4285f4;
-      --accent-soft: #fff8e1;
-      --accent-border: #fbbc05;
-      --border: #dadce0;
+      --bg-void: #04060b;
+      --bg-stage: #0c1017;
+      --text: #f5efe2;
+      --text-muted: #b7ab93;
+      --text-soft: #8f877c;
+      --gold: #dcc089;
+      --gold-soft: #f3e4be;
+      --warning-bg: rgba(126, 92, 27, 0.18);
+      --warning-border: rgba(209, 171, 96, 0.28);
+      --border: rgba(240, 221, 177, 0.16);
+      --border-strong: rgba(240, 221, 177, 0.28);
+      --shadow-strong: 0 28px 70px rgba(0, 0, 0, 0.45);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 20rem;
+      min-height: 100%;
+      background: var(--bg-void);
+      color-scheme: dark;
+    }
 
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
+      min-width: 20rem;
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: 'Manrope', 'Avenir Next', 'Segoe UI', sans-serif;
       color: var(--text);
-      line-height: 1.65;
-      padding: 32px 20px 48px;
+      background:
+        radial-gradient(circle at 50% -8%, rgba(151, 179, 211, 0.16), transparent 34%),
+        radial-gradient(circle at 82% 18%, rgba(118, 134, 161, 0.14), transparent 26%),
+        linear-gradient(180deg, #04060b 0%, #0b1017 38%, #04060b 100%);
     }
 
-    .container {
-      max-width: 860px;
-      margin: 0 auto;
+    body::before,
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
     }
 
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 36px 28px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    body::before {
+      opacity: 0.1;
+      background:
+        linear-gradient(90deg, transparent 0, transparent 12%, rgba(255, 255, 255, 0.16) 12.2%, transparent 12.6%, transparent 100%),
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28) 0.05rem, transparent 0.1rem),
+        radial-gradient(circle at 72% 38%, rgba(255, 255, 255, 0.22) 0.05rem, transparent 0.1rem),
+        radial-gradient(circle at 55% 68%, rgba(255, 255, 255, 0.12) 0.04rem, transparent 0.08rem);
+      background-size: 22rem 100%, 12rem 12rem, 16rem 16rem, 18rem 18rem;
+      mix-blend-mode: screen;
     }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
+    body::after {
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2)),
+        linear-gradient(0deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.025));
+      opacity: 0.48;
     }
 
-    .subtitle {
-      margin: 0 0 28px;
-      color: var(--muted);
-      font-size: 1rem;
-    }
-
-    h2 {
-      margin-top: 28px;
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      color: var(--accent);
-    }
-
-    p {
-      margin: 0 0 14px;
-    }
-
-    .notice {
-      border-left: 4px solid var(--accent-border);
-      padding: 14px 16px;
-      margin: 16px 0;
-      background: var(--accent-soft);
-      border-radius: 10px;
+    a,
+    button {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
     }
 
     a {
-      color: var(--accent);
+      color: var(--gold-soft);
       text-decoration: none;
     }
 
     a:hover {
-      text-decoration: underline;
+      color: var(--gold);
     }
 
-    .footer {
-      margin-top: 28px;
-      color: var(--muted);
+    button:focus-visible,
+    a:focus-visible {
+      outline: 0.125rem solid rgba(243, 228, 190, 0.9);
+      outline-offset: 0.125rem;
+    }
+
+    .privacy-shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding:
+        max(0.85rem, env(safe-area-inset-top))
+        0.85rem
+        max(0.85rem, env(safe-area-inset-bottom));
+    }
+
+    .privacy-dialog {
+      width: min(100%, 52rem);
+      max-height: calc(100dvh - max(1.7rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 1.7rem;
+      background: linear-gradient(180deg, rgba(16, 22, 33, 0.98), rgba(9, 13, 20, 0.98));
+      box-shadow: var(--shadow-strong);
+      overflow: hidden;
+    }
+
+    .privacy-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.35rem 1.35rem 0.95rem;
+      background: linear-gradient(180deg, rgba(16, 22, 33, 0.98), rgba(16, 22, 33, 0.9));
+      border-bottom: 1px solid rgba(240, 221, 177, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .privacy-header h1 {
+      margin: 0;
+      color: var(--gold-soft);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .privacy-close {
+      width: 2.65rem;
+      height: 2.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .privacy-close:hover {
+      color: var(--gold-soft);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .privacy-body {
+      overflow-y: auto;
+      padding: 0 1.35rem 1.35rem;
+    }
+
+    .privacy-copy {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .privacy-meta {
+      margin: 0;
+      color: var(--text-muted);
       font-size: 0.95rem;
     }
 
-    strong {
-      color: var(--text);
+    .privacy-copy section {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .privacy-copy h2 {
+      margin: 0;
+      color: var(--gold-soft);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .privacy-copy p {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .privacy-notice {
+      padding: 0.95rem 1rem;
+      border: 1px solid var(--warning-border);
+      border-radius: 1rem;
+      background: var(--warning-bg);
+      color: var(--gold-soft);
+    }
+
+    .privacy-notice p {
+      color: inherit;
+    }
+
+    .privacy-footer {
+      margin: 0.25rem 0 0;
+      color: var(--text-soft);
+      font-size: 0.92rem;
+    }
+
+    .privacy-back-to-top {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 0.35rem;
+      color: var(--gold-soft);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-decoration: underline;
+      text-underline-offset: 0.16em;
+      text-transform: uppercase;
     }
 
     @media (max-width: 47.99rem) {
-      body {
-        padding: 20px 16px 32px;
+      .privacy-shell {
+        display: block;
+        padding: 0;
       }
 
-      .card {
-        padding: 28px 20px;
-        border-radius: 16px;
+      .privacy-dialog {
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .privacy-header {
+        padding-top: max(1rem, env(safe-area-inset-top));
+      }
+
+      .privacy-body {
+        padding-bottom: max(1.35rem, env(safe-area-inset-bottom));
+      }
+
+      .privacy-header h1 {
+        font-size: 1.7rem;
       }
     }
   </style>
 </head>
 <body>
-  <main class="container">
-    <section class="card">
-      <h1>Privacy Policy for CastLink</h1>
-      <p class="subtitle"><strong>Effective Date:</strong> March 17, 2026</p>
+  <main class="privacy-shell" id="privacy-top">
+    <article class="privacy-dialog" aria-labelledby="privacy-title">
+      <header class="privacy-header">
+        <h1 id="privacy-title">Privacy Policy</h1>
+        <button type="button" class="privacy-close" aria-label="Close Privacy Policy" id="privacy-close">×</button>
+      </header>
 
-      <p>
-        CastLink is an independent app created and operated by a single developer.
-      </p>
-      <p>
-        CastLink lets users search connections between actors, movies, and TV shows,
-        including common titles between actors, common actors between titles, and
-        Kevin Bacon-style connection paths.
-      </p>
+      <div class="privacy-body">
+        <div class="privacy-copy">
+          <p class="privacy-meta"><strong>Effective Date:</strong> March 17, 2026</p>
 
-      <h2>Information We Collect</h2>
-      <p>
-        CastLink does not require users to create an account or sign in.
-      </p>
-      <p>
-        CastLink does not directly collect personal information such as your name,
-        email address, phone number, or payment information.
-      </p>
-      <p>
-        CastLink does not use advertising, third-party trackers, or third-party
-        analytics SDKs.
-      </p>
+          <section>
+            <p>CastLink is an independent app created and operated by a single developer.</p>
+            <p>
+              CastLink lets users search connections between actors, movies, and TV shows, including common titles between actors,
+              common actors between titles, and Kevin Bacon-style connection paths.
+            </p>
+          </section>
 
-      <h2>Search Activity</h2>
-      <p>
-        When you use CastLink, you may enter searches for actors, movies, or TV shows.
-        These searches are used only to provide the app’s functionality and display results.
-      </p>
-      <p>
-        CastLink does not maintain user accounts and does not intentionally store your
-        searches on its own servers.
-      </p>
+          <section>
+            <h2>Information We Collect</h2>
+            <p>CastLink does not require users to create an account or sign in.</p>
+            <p>CastLink does not directly collect personal information such as your name, email address, phone number, or payment information.</p>
+            <p>CastLink does not use advertising, third-party trackers, or third-party analytics SDKs.</p>
+          </section>
 
-      <h2>Shareable Links</h2>
-      <p>
-        CastLink can generate a shareable link for a search result. If you choose to
-        share that link, the recipient may be able to view the same search result or
-        connection represented by that link.
-      </p>
-      <p>
-        You should only share links if you are comfortable sharing those results with others.
-      </p>
+          <section>
+            <h2>Search Activity</h2>
+            <p>When you use CastLink, you may enter searches for actors, movies, or TV shows. These searches are used only to provide the app’s functionality and display results.</p>
+            <p>CastLink does not maintain user accounts and does not intentionally store your searches on its own servers.</p>
+          </section>
 
-      <h2>Third-Party Data Provider</h2>
-      <p>
-        CastLink uses TMDB (The Movie Database) API to retrieve movie, TV, and person
-        information.
-      </p>
+          <section>
+            <h2>Shareable Links</h2>
+            <p>CastLink can generate a shareable link for a search result. If you choose to share that link, the recipient may be able to view the same search result or connection represented by that link.</p>
+            <p>You should only share links if you are comfortable sharing those results with others.</p>
+          </section>
 
-      <div class="notice">
-        <strong>Required TMDB Notice:</strong><br />
-        This product uses TMDB and the TMDB APIs but is not endorsed, certified, or
-        otherwise approved by TMDB.
+          <section>
+            <h2>Third-Party Data Provider</h2>
+            <p>CastLink uses TMDB (The Movie Database) API to retrieve movie, TV, and person information.</p>
+            <div class="privacy-notice">
+              <p><strong>Required TMDB Notice:</strong></p>
+              <p>This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
+            </div>
+            <p>Because CastLink requests data from TMDB over the internet, TMDB may receive standard technical request information needed to return results.</p>
+          </section>
+
+          <section>
+            <h2>Advertising and Tracking</h2>
+            <p>CastLink does not use ads.</p>
+            <p>CastLink does not use advertising identifiers for tracking.</p>
+            <p>CastLink does not use third-party tracking technologies for profiling or targeted advertising.</p>
+          </section>
+
+          <section>
+            <h2>Data Retention</h2>
+            <p>CastLink does not intentionally retain personal information because it does not provide accounts or directly collect personal user data.</p>
+            <p>If any app state or preferences are stored locally on your device, that information remains on your device unless you choose to share it.</p>
+          </section>
+
+          <section>
+            <h2>Children’s Privacy</h2>
+            <p>CastLink is not directed to children under 13, and CastLink does not knowingly collect personal information from children.</p>
+          </section>
+
+          <section>
+            <h2>Security</h2>
+            <p>CastLink uses reasonable measures to protect the app and its communications, but no method of transmission or electronic storage is completely secure.</p>
+          </section>
+
+          <section>
+            <h2>Changes to This Privacy Policy</h2>
+            <p>This Privacy Policy may be updated from time to time. If it is updated, the Effective Date above will also be updated.</p>
+          </section>
+
+          <section>
+            <h2>Contact</h2>
+            <p>If you have questions about this Privacy Policy, you can contact <a href="mailto:Support@CastLink.app">Support@CastLink.app</a>.</p>
+          </section>
+
+          <p class="privacy-footer">Last updated: March 17, 2026</p>
+          <a class="privacy-back-to-top" href="#privacy-top" id="privacy-back-to-top">Back to Top</a>
+        </div>
       </div>
-
-      <p>
-        Because CastLink requests data from TMDB over the internet, TMDB may receive
-        standard technical request information needed to return results.
-      </p>
-
-      <h2>Advertising and Tracking</h2>
-      <p>CastLink does not use ads.</p>
-      <p>CastLink does not use advertising identifiers for tracking.</p>
-      <p>
-        CastLink does not use third-party tracking technologies for profiling or
-        targeted advertising.
-      </p>
-
-      <h2>Data Retention</h2>
-      <p>
-        CastLink does not intentionally retain personal information because it does not
-        provide accounts or directly collect personal user data.
-      </p>
-      <p>
-        If any app state or preferences are stored locally on your device, that
-        information remains on your device unless you choose to share it.
-      </p>
-
-      <h2>Children’s Privacy</h2>
-      <p>
-        CastLink is not directed to children under 13, and CastLink does not knowingly
-        collect personal information from children.
-      </p>
-
-      <h2>Security</h2>
-      <p>
-        CastLink uses reasonable measures to protect the app and its communications,
-        but no method of transmission or electronic storage is completely secure.
-      </p>
-
-      <h2>Changes to This Privacy Policy</h2>
-      <p>
-        This Privacy Policy may be updated from time to time. If it is updated, the
-        Effective Date above will also be updated.
-      </p>
-
-      <h2>Contact</h2>
-      <p>
-        If you have questions about this Privacy Policy, you can contact:
-      </p>
-      <p>
-        <a href="mailto:Support@CastLink.app">Support@CastLink.app</a>
-      </p>
-
-      <p class="footer">
-        Last updated: March 17, 2026
-      </p>
-    </section>
+    </article>
   </main>
+
+  <script>
+    const privacyBody = document.querySelector('.privacy-body')
+
+    document.getElementById('privacy-close')?.addEventListener('click', () => {
+      if (window.history.length > 1) {
+        window.history.back()
+        return
+      }
+
+      window.location.href = '/'
+    })
+
+    document.getElementById('privacy-back-to-top')?.addEventListener('click', (event) => {
+      event.preventDefault()
+
+      if (privacyBody instanceof HTMLElement) {
+        privacyBody.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  </script>
 </body>
 </html>

@@ -16,7 +16,7 @@ export const FilterToggle = ({ checked, onChange }: FilterToggleProps) => {
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
       />
-      <span className="filter-toggle-label">Filter out Talk Shows &amp; &quot;Self&quot; cameos</span>
+      <span className="filter-toggle-label">Filter Talk Shows / Cameos</span>
     </label>
   )
 }
