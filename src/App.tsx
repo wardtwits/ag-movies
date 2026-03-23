@@ -1288,6 +1288,7 @@ function App() {
               isLoading={isLoading}
               errorMessage={errorMessage}
               result={baconResult}
+              isMobileViewport={isMobileViewport}
               showCopyResultsLink={shouldShowCopyResultsLink}
               copyResultsLinkLabel={copyResultsLinkLabel}
               onCopyResultsLink={handleCopyResultsLink}

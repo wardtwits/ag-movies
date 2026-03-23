@@ -1076,6 +1076,23 @@ input:focus-visible,
   line-height: 1.05;
 }
 
+.bacon-person-node-bridge-text-only {
+  width: auto;
+  max-width: 5.5rem;
+  justify-content: center;
+}
+
+.bacon-person-node-bridge-text-only .bacon-person-name {
+  max-width: 100%;
+  color: var(--gold-soft);
+  font-size: 0.76rem;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-decoration-color: rgba(243, 228, 190, 0.32);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.12em;
+}
+
 .bacon-media-node {
   width: min(100%, calc(var(--bacon-bridge-visual-size) + 0.5rem));
   gap: 0.34rem;

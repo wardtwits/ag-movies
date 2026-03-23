@@ -14,6 +14,7 @@ interface BaconPathSectionProps {
   isLoading: boolean
   errorMessage: string | null
   result: BaconLawResult | null
+  isMobileViewport: boolean
   showCopyResultsLink: boolean
   copyResultsLinkLabel: string
   onCopyResultsLink: () => void
@@ -68,6 +69,7 @@ export const BaconPathSection = ({
   isLoading,
   errorMessage,
   result,
+  isMobileViewport,
   showCopyResultsLink,
   copyResultsLinkLabel,
   onCopyResultsLink,
@@ -96,6 +98,7 @@ export const BaconPathSection = ({
   }
 
   const finalActor = result.steps[result.steps.length - 1]?.toActor ?? result.actor.person
+  const hideBridgeActorPortraits = isMobileViewport && result.degree > 1
 
   return (
     <section className="bacon-section" aria-live="polite">
@@ -174,18 +177,20 @@ export const BaconPathSection = ({
                         href={tmdbPersonHref(step.toActor.id)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bacon-person-node bacon-person-node-bridge"
+                        className={`bacon-person-node bacon-person-node-bridge${hideBridgeActorPortraits ? ' bacon-person-node-bridge-text-only' : ''}`}
                         role="listitem"
                       >
-                        <span className="actor-spotlight-portrait-shell bacon-person-medallion">
-                          {getProfileImageUrl(step.toActor.profilePath) ? (
-                            <img src={getProfileImageUrl(step.toActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-                          ) : (
-                            <span className="actor-spotlight-fallback" aria-hidden="true">
-                              {getInitials(step.toActor.name)}
-                            </span>
-                          )}
-                        </span>
+                        {!hideBridgeActorPortraits ? (
+                          <span className="actor-spotlight-portrait-shell bacon-person-medallion">
+                            {getProfileImageUrl(step.toActor.profilePath) ? (
+                              <img src={getProfileImageUrl(step.toActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+                            ) : (
+                              <span className="actor-spotlight-fallback" aria-hidden="true">
+                                {getInitials(step.toActor.name)}
+                              </span>
+                            )}
+                          </span>
+                        ) : null}
                         <span className="bacon-person-name">{step.toActor.name}</span>
                       </a>
                     ) : null}
