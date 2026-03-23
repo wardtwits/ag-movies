@@ -16,6 +16,7 @@ interface ActorConnectionSpotlightProps {
   leftActor: SpotlightActor
   rightActor: SpotlightActor
   titles: ActorConnectionSpotlightTitle[]
+  hideSearchedActors?: boolean
 }
 
 const getProfileImageUrl = (path?: string | null): string | null => (path ? `${PROFILE_IMAGE_BASE_URL}${path}` : null)
@@ -28,7 +29,12 @@ const getInitials = (name: string): string =>
     .map((part) => part.charAt(0).toUpperCase())
     .join('') || '?'
 
-export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: ActorConnectionSpotlightProps) => {
+export const ActorConnectionSpotlight = ({
+  leftActor,
+  rightActor,
+  titles,
+  hideSearchedActors = false,
+}: ActorConnectionSpotlightProps) => {
   if (!titles.length) {
     return null
   }
@@ -44,18 +50,20 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
       </div>
 
       <div className="actor-spotlight-stage">
-        <div className="actor-spotlight-actor actor-spotlight-actor-left">
-          <div className="actor-spotlight-portrait-shell">
-            {getProfileImageUrl(leftActor.profilePath) ? (
-              <img src={getProfileImageUrl(leftActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-            ) : (
-              <span className="actor-spotlight-fallback" aria-hidden="true">
-                {getInitials(leftActor.name)}
-              </span>
-            )}
+        {!hideSearchedActors ? (
+          <div className="actor-spotlight-actor actor-spotlight-actor-left">
+            <div className="actor-spotlight-portrait-shell">
+              {getProfileImageUrl(leftActor.profilePath) ? (
+                <img src={getProfileImageUrl(leftActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+              ) : (
+                <span className="actor-spotlight-fallback" aria-hidden="true">
+                  {getInitials(leftActor.name)}
+                </span>
+              )}
+            </div>
+            <div className="actor-spotlight-nameplate">{leftActor.name}</div>
           </div>
-          <div className="actor-spotlight-nameplate">{leftActor.name}</div>
-        </div>
+        ) : null}
 
         <div className="actor-spotlight-filmstrip">
           <img src={FILM_ROLL_IMAGE_URL} alt="" className="actor-spotlight-reel" aria-hidden="true" />
@@ -87,18 +95,20 @@ export const ActorConnectionSpotlight = ({ leftActor, rightActor, titles }: Acto
           </div>
         </div>
 
-        <div className="actor-spotlight-actor actor-spotlight-actor-right">
-          <div className="actor-spotlight-portrait-shell">
-            {getProfileImageUrl(rightActor.profilePath) ? (
-              <img src={getProfileImageUrl(rightActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
-            ) : (
-              <span className="actor-spotlight-fallback" aria-hidden="true">
-                {getInitials(rightActor.name)}
-              </span>
-            )}
+        {!hideSearchedActors ? (
+          <div className="actor-spotlight-actor actor-spotlight-actor-right">
+            <div className="actor-spotlight-portrait-shell">
+              {getProfileImageUrl(rightActor.profilePath) ? (
+                <img src={getProfileImageUrl(rightActor.profilePath) ?? undefined} alt="" className="actor-spotlight-portrait" />
+              ) : (
+                <span className="actor-spotlight-fallback" aria-hidden="true">
+                  {getInitials(rightActor.name)}
+                </span>
+              )}
+            </div>
+            <div className="actor-spotlight-nameplate">{rightActor.name}</div>
           </div>
-          <div className="actor-spotlight-nameplate">{rightActor.name}</div>
-        </div>
+        ) : null}
       </div>
     </section>
   )

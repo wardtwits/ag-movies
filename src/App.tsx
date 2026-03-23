@@ -1310,12 +1310,14 @@ function App() {
                     leftActor={actorSpotlight.leftActor}
                     rightActor={actorSpotlight.rightActor}
                     titles={actorSpotlight.titles}
+                    hideSearchedActors={isMobileViewport}
                   />
                 ) : mode === 'titles' && titleSpotlight ? (
                   <TitleConnectionSpotlight
                     leftTitle={titleSpotlight.leftTitle}
                     rightTitle={titleSpotlight.rightTitle}
                     actors={titleSpotlight.actors}
+                    hideSearchedTitles={isMobileViewport}
                   />
                 ) : undefined
               }
