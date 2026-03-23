@@ -9,6 +9,7 @@ interface TitleConnectionSpotlightProps {
   leftTitle: MediaTitle
   rightTitle: MediaTitle
   actors: Array<Pick<ResultCardData, 'id' | 'title' | 'subtitle' | 'href' | 'imagePath'>>
+  hideSearchedTitles?: boolean
 }
 
 const getPosterImageUrl = (path?: string | null): string | null => (path ? `${POSTER_IMAGE_BASE_URL}${path}` : null)
@@ -28,7 +29,12 @@ const getInitials = (label: string): string =>
 const getYearLabel = (title: MediaTitle): string => title.releaseDate?.slice(0, 4) ?? (title.mediaType === 'tv' ? 'TV' : 'Film')
 const getRoleLabel = (subtitle: string): string | null => (subtitle === 'Actor' ? null : subtitle.replace(/^Role:\s*/, ''))
 
-export const TitleConnectionSpotlight = ({ leftTitle, rightTitle, actors }: TitleConnectionSpotlightProps) => {
+export const TitleConnectionSpotlight = ({
+  leftTitle,
+  rightTitle,
+  actors,
+  hideSearchedTitles = false,
+}: TitleConnectionSpotlightProps) => {
   return (
     <section className="title-spotlight" aria-label={`Top-billed shared cast for ${leftTitle.title} and ${rightTitle.title}`}>
       <div className="title-spotlight-header">
@@ -38,25 +44,27 @@ export const TitleConnectionSpotlight = ({ leftTitle, rightTitle, actors }: Titl
       </div>
 
       <div className="title-spotlight-stage">
-        <a href={getMediaHref(leftTitle)} target="_blank" rel="noopener noreferrer" className="title-spotlight-title-card">
-          <span className="title-spotlight-title-frame">
-            {getPosterImageUrl(leftTitle.posterPath) ? (
-              <img
-                src={getPosterImageUrl(leftTitle.posterPath) ?? undefined}
-                alt=""
-                className="title-spotlight-title-image"
-              />
-            ) : (
-              <span className="title-spotlight-title-fallback" aria-hidden="true">
-                {getInitials(leftTitle.title)}
-              </span>
-            )}
-          </span>
-          <span className="title-spotlight-title-copy">
-            <span className="title-spotlight-title-name">{leftTitle.title}</span>
-            <span className="title-spotlight-title-year">{getYearLabel(leftTitle)}</span>
-          </span>
-        </a>
+        {!hideSearchedTitles ? (
+          <a href={getMediaHref(leftTitle)} target="_blank" rel="noopener noreferrer" className="title-spotlight-title-card">
+            <span className="title-spotlight-title-frame">
+              {getPosterImageUrl(leftTitle.posterPath) ? (
+                <img
+                  src={getPosterImageUrl(leftTitle.posterPath) ?? undefined}
+                  alt=""
+                  className="title-spotlight-title-image"
+                />
+              ) : (
+                <span className="title-spotlight-title-fallback" aria-hidden="true">
+                  {getInitials(leftTitle.title)}
+                </span>
+              )}
+            </span>
+            <span className="title-spotlight-title-copy">
+              <span className="title-spotlight-title-name">{leftTitle.title}</span>
+              <span className="title-spotlight-title-year">{getYearLabel(leftTitle)}</span>
+            </span>
+          </a>
+        ) : null}
 
         {actors.length ? (
           <div className="title-spotlight-filmstrip">
@@ -91,25 +99,27 @@ export const TitleConnectionSpotlight = ({ leftTitle, rightTitle, actors }: Titl
           </div>
         ) : null}
 
-        <a href={getMediaHref(rightTitle)} target="_blank" rel="noopener noreferrer" className="title-spotlight-title-card">
-          <span className="title-spotlight-title-frame">
-            {getPosterImageUrl(rightTitle.posterPath) ? (
-              <img
-                src={getPosterImageUrl(rightTitle.posterPath) ?? undefined}
-                alt=""
-                className="title-spotlight-title-image"
-              />
-            ) : (
-              <span className="title-spotlight-title-fallback" aria-hidden="true">
-                {getInitials(rightTitle.title)}
-              </span>
-            )}
-          </span>
-          <span className="title-spotlight-title-copy">
-            <span className="title-spotlight-title-name">{rightTitle.title}</span>
-            <span className="title-spotlight-title-year">{getYearLabel(rightTitle)}</span>
-          </span>
-        </a>
+        {!hideSearchedTitles ? (
+          <a href={getMediaHref(rightTitle)} target="_blank" rel="noopener noreferrer" className="title-spotlight-title-card">
+            <span className="title-spotlight-title-frame">
+              {getPosterImageUrl(rightTitle.posterPath) ? (
+                <img
+                  src={getPosterImageUrl(rightTitle.posterPath) ?? undefined}
+                  alt=""
+                  className="title-spotlight-title-image"
+                />
+              ) : (
+                <span className="title-spotlight-title-fallback" aria-hidden="true">
+                  {getInitials(rightTitle.title)}
+                </span>
+              )}
+            </span>
+            <span className="title-spotlight-title-copy">
+              <span className="title-spotlight-title-name">{rightTitle.title}</span>
+              <span className="title-spotlight-title-year">{getYearLabel(rightTitle)}</span>
+            </span>
+          </a>
+        ) : null}
       </div>
     </section>
   )
