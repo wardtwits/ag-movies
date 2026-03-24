@@ -193,7 +193,7 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
                     className="app-nav-drawer-link"
                     onClick={() => openDialogAfterClosing(onDownloadOpen)}
                   >
-                    Download
+                    Get the App
                   </button>
                   <button
                     type="button"
@@ -222,7 +222,7 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
   ) : (
     <>
       <button type="button" className="app-nav-link" onClick={onDownloadOpen}>
-        Download
+        Get the App
       </button>
       <button type="button" className="app-nav-link" onClick={onAboutOpen}>
         About

@@ -1655,6 +1655,7 @@ input:focus-visible,
     drop-shadow(0 0.5rem 0.95rem rgba(0, 0, 0, 0.28));
   pointer-events: none;
   user-select: none;
+  opacity:0.3;
 }
 
 .actor-spotlight-titles {
@@ -3097,6 +3098,7 @@ input:focus-visible,
     height: 40%;
     object-fit: cover;
     object-position: center;
+    opacity:0.1;
   }
 
   .bacon-endpoint-only {

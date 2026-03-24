@@ -5,23 +5,6 @@ interface DownloadDialogProps {
   onClose: () => void
 }
 
-const LINKS = [
-  {
-    href: '#',
-    title: 'Apple App Store',
-    subtitle: 'Download for iOS',
-    accentClassName: 'about-link-icon-green',
-    icon: '',
-  },
-  {
-    href: '#',
-    title: 'Google Play',
-    subtitle: 'Download for Android',
-    accentClassName: 'about-link-icon-green',
-    icon: '▶',
-  },
-]
-
 export const DownloadDialog = ({ open, onClose }: DownloadDialogProps) => {
   return (
     <Dialog
@@ -35,28 +18,18 @@ export const DownloadDialog = ({ open, onClose }: DownloadDialogProps) => {
       }
       maxWidth="sm"
     >
-      <div className="about-dialog-stack">
-        <div className="about-intro">
-          <p>
-            Get the CastLink app on your mobile device for the best experience.
-          </p>
-        </div>
+      <div className="about-dialog-stack" style={{ textAlign: 'center', padding: '1rem 0' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+          Get the CastLink app on your mobile device for the best experience.
+        </p>
 
-        <div className="about-links">
-          {LINKS.map((link) => (
-            <a key={link.title} href={link.href} target="_blank" rel="noopener noreferrer" className="about-link-card">
-              <span className={`about-link-icon ${link.accentClassName}`} aria-hidden="true">
-                {link.icon}
-              </span>
-              <span className="about-link-copy">
-                <strong>{link.title}</strong>
-                <span>{link.subtitle}</span>
-              </span>
-              <span className="about-link-arrow" aria-hidden="true">
-                ↗
-              </span>
-            </a>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
+          <a href="#" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+            <img src="/images/app-store-badge.svg" alt="Download on the App Store" style={{ height: '48px', width: 'auto', display: 'block' }} />
+          </a>
+          <a href="#" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+            <img src="/images/google-play-badge.svg" alt="Get it on Google Play" style={{ height: '48px', width: 'auto', display: 'block' }} />
+          </a>
         </div>
       </div>
     </Dialog>
