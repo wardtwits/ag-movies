@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 interface AppNavProps {
   onAboutOpen: () => void
   onHowItWorksOpen: () => void
+  onDownloadOpen: () => void
 }
 
 const MOBILE_QUERY = '(max-width: 47.99rem)'
@@ -18,7 +19,7 @@ const getIsMobileViewport = (): boolean => {
   return window.matchMedia(MOBILE_QUERY).matches
 }
 
-export const AppNav = ({ onAboutOpen, onHowItWorksOpen }: AppNavProps) => {
+export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNavProps) => {
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -190,6 +191,13 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen }: AppNavProps) => {
                   <button
                     type="button"
                     className="app-nav-drawer-link"
+                    onClick={() => openDialogAfterClosing(onDownloadOpen)}
+                  >
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    className="app-nav-drawer-link"
                     onClick={() => openDialogAfterClosing(onAboutOpen)}
                   >
                     About
@@ -213,6 +221,9 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen }: AppNavProps) => {
     </>
   ) : (
     <>
+      <button type="button" className="app-nav-link" onClick={onDownloadOpen}>
+        Download
+      </button>
       <button type="button" className="app-nav-link" onClick={onAboutOpen}>
         About
       </button>

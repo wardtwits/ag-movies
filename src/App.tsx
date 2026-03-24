@@ -3,6 +3,7 @@ import { AboutDialog } from './components/AboutDialog'
 import { ActorConnectionSpotlight } from './components/ActorConnectionSpotlight'
 import { AppNav } from './components/AppNav'
 import { BaconPathSection } from './components/BaconPathSection'
+import { DownloadDialog } from './components/DownloadDialog'
 import { HeroHeader, type SearchMode } from './components/HeroHeader'
 import { HowItWorksDialog } from './components/HowItWorksDialog'
 import type { ResultCardData } from './components/ResultCard'
@@ -384,6 +385,7 @@ function App() {
   const [shareCopyState, setShareCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const [aboutOpen, setAboutOpen] = useState(false)
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
+  const [downloadOpen, setDownloadOpen] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
     typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       ? window.matchMedia(MOBILE_LAYOUT_QUERY).matches
@@ -1235,7 +1237,11 @@ function App() {
 
   return (
     <div className="app-shell">
-      <AppNav onAboutOpen={() => setAboutOpen(true)} onHowItWorksOpen={() => setHowItWorksOpen(true)} />
+      <AppNav
+        onAboutOpen={() => setAboutOpen(true)}
+        onHowItWorksOpen={() => setHowItWorksOpen(true)}
+        onDownloadOpen={() => setDownloadOpen(true)}
+      />
 
       <main className="app-main">
         <section className={`hero-stage hero-stage-${mode}`} ref={topScrollTargetRef}>
@@ -1349,6 +1355,7 @@ function App() {
 
       <HowItWorksDialog open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <DownloadDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
     </div>
   )
 }
