@@ -589,6 +589,7 @@ function App() {
   const resultCount = getComparisonResultCount(displayedComparisonState)
   const allComparisonResultCount = getComparisonResultCount(comparisonState)
   const filteredComparisonResultCount = getComparisonResultCount(filteredComparisonState)
+  const isMobileWebViewport = isMobileViewport && !isNativeApp()
   const hasRenderableResultContent =
     mode === 'bacon'
       ? Boolean(baconResult)
@@ -1288,7 +1289,7 @@ function App() {
               isLoading={isLoading}
               errorMessage={errorMessage}
               result={baconResult}
-              isMobileViewport={isMobileViewport && !isNativeApp()}
+              isMobileViewport={isMobileWebViewport}
               showCopyResultsLink={shouldShowCopyResultsLink}
               copyResultsLinkLabel={copyResultsLinkLabel}
               onCopyResultsLink={handleCopyResultsLink}
@@ -1305,19 +1306,19 @@ function App() {
               groups={resultGroups}
               sectionClassName={mode === 'titles' ? 'results-section-titles' : undefined}
               spotlight={
-                mode === 'actors' && actorSpotlight ? (
+                isMobileWebViewport ? undefined : mode === 'actors' && actorSpotlight ? (
                   <ActorConnectionSpotlight
                     leftActor={actorSpotlight.leftActor}
                     rightActor={actorSpotlight.rightActor}
                     titles={actorSpotlight.titles}
-                    hideSearchedActors={isMobileViewport && !isNativeApp()}
+                    hideSearchedActors={isMobileWebViewport}
                   />
                 ) : mode === 'titles' && titleSpotlight ? (
                   <TitleConnectionSpotlight
                     leftTitle={titleSpotlight.leftTitle}
                     rightTitle={titleSpotlight.rightTitle}
                     actors={titleSpotlight.actors}
-                    hideSearchedTitles={isMobileViewport && !isNativeApp()}
+                    hideSearchedTitles={isMobileWebViewport}
                   />
                 ) : undefined
               }

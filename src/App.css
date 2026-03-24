@@ -1045,7 +1045,8 @@ input:focus-visible,
   width: min(100%, var(--bacon-endpoint-visual-size));
 }
 
-.bacon-person-node-large .bacon-person-name {
+.bacon-person-node-large .bacon-person-name,
+.bacon-person-node-bridge-text-only .bacon-person-name {
   max-width: 100%;
   min-height: 2.25rem;
   padding: 0.5rem 1.1rem;
@@ -1078,19 +1079,13 @@ input:focus-visible,
 
 .bacon-person-node-bridge-text-only {
   width: auto;
-  max-width: 5.5rem;
+  max-width: min(100%, 10.5rem);
   justify-content: center;
 }
 
 .bacon-person-node-bridge-text-only .bacon-person-name {
-  max-width: 100%;
-  color: var(--gold-soft);
   font-size: 0.76rem;
   line-height: 1.2;
-  text-decoration: underline;
-  text-decoration-color: rgba(243, 228, 190, 0.32);
-  text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.12em;
 }
 
 .bacon-media-node {
@@ -2737,6 +2732,11 @@ input:focus-visible,
 
   .bacon-person-node-bridge {
     width: min(100%, 6rem);
+  }
+
+  .bacon-person-node-bridge-text-only {
+    width: auto;
+    max-width: min(100%, 10.5rem);
   }
 
   .bacon-media-node {
