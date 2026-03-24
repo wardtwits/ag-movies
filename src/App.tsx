@@ -1288,7 +1288,7 @@ function App() {
               isLoading={isLoading}
               errorMessage={errorMessage}
               result={baconResult}
-              isMobileViewport={isMobileViewport}
+              isMobileViewport={isMobileViewport && !isNativeApp()}
               showCopyResultsLink={shouldShowCopyResultsLink}
               copyResultsLinkLabel={copyResultsLinkLabel}
               onCopyResultsLink={handleCopyResultsLink}
@@ -1310,14 +1310,14 @@ function App() {
                     leftActor={actorSpotlight.leftActor}
                     rightActor={actorSpotlight.rightActor}
                     titles={actorSpotlight.titles}
-                    hideSearchedActors={isMobileViewport}
+                    hideSearchedActors={isMobileViewport && !isNativeApp()}
                   />
                 ) : mode === 'titles' && titleSpotlight ? (
                   <TitleConnectionSpotlight
                     leftTitle={titleSpotlight.leftTitle}
                     rightTitle={titleSpotlight.rightTitle}
                     actors={titleSpotlight.actors}
-                    hideSearchedTitles={isMobileViewport}
+                    hideSearchedTitles={isMobileViewport && !isNativeApp()}
                   />
                 ) : undefined
               }
