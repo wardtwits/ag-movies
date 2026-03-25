@@ -14,6 +14,46 @@ export const Dialog = ({ open, title, onClose, children, actions, maxWidth = 'md
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const lastFocusedElementRef = useRef<HTMLElement | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // Get all focusable elements within dialog
+  const getFocusableElements = (): HTMLElement[] => {
+    if (!dialogRef.current) return []
+
+    const selector = [
+      'button:not([disabled])',
+      'a[href]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',')
+
+    return Array.from(dialogRef.current.querySelectorAll(selector))
+  }
+
+  const handleTabKey = (event: KeyboardEvent) => {
+    const focusableElements = getFocusableElements()
+    if (focusableElements.length === 0) return
+
+    const firstElement = focusableElements[0] as HTMLElement
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+    const activeElement = document.activeElement
+
+    if (event.shiftKey) {
+      // Shift + Tab
+      if (activeElement === firstElement) {
+        event.preventDefault()
+        lastElement.focus()
+      }
+    } else {
+      // Tab
+      if (activeElement === lastElement) {
+        event.preventDefault()
+        firstElement.focus()
+      }
+    }
+  }
 
   useEffect(() => {
     if (!open) {
@@ -29,6 +69,8 @@ export const Dialog = ({ open, title, onClose, children, actions, maxWidth = 'md
       if (event.key === 'Escape') {
         event.preventDefault()
         onClose()
+      } else if (event.key === 'Tab') {
+        handleTabKey(event)
       }
     }
 
@@ -47,6 +89,7 @@ export const Dialog = ({ open, title, onClose, children, actions, maxWidth = 'md
   return createPortal(
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <div
+        ref={dialogRef}
         className={`dialog dialog-${maxWidth}`}
         role="dialog"
         aria-modal="true"
@@ -56,7 +99,7 @@ export const Dialog = ({ open, title, onClose, children, actions, maxWidth = 'md
         <div className="dialog-header">
           <h2 id={titleId}>{title}</h2>
           <button ref={closeButtonRef} type="button" className="dialog-close" onClick={onClose} aria-label={`Close ${title}`}>
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true" tabIndex={-1}>×</span>
           </button>
         </div>
         <div className="dialog-body">{children}</div>

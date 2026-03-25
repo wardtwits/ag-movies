@@ -105,7 +105,7 @@ export const BaconPathSection = ({
       <div className="bacon-header">
         {showCopyResultsLink ? (
           <div className="bacon-share-row">
-            <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
+            <button  aria-label="Copy Results Link" type="button" className="results-share-button" onClick={onCopyResultsLink}>
               <LinkIcon className="action-link-icon" />
               <span>{copyResultsLinkLabel}</span>
             </button>
@@ -243,7 +243,7 @@ export const BaconPathSection = ({
 
       {showBackToTopLink ? (
         <div className="results-footer">
-          <button type="button" className="results-back-to-top-link" onClick={onBackToTop}>
+          <button aria-label="Back to Top" type="button" className="results-back-to-top-link" onClick={onBackToTop}>
             Back to Top
           </button>
         </div>

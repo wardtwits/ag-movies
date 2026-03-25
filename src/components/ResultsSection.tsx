@@ -72,7 +72,7 @@ export const ResultsSection = ({
             ) : null}
           </div>
           {showCopyResultsLink ? (
-            <button type="button" className="results-share-button" onClick={onCopyResultsLink}>
+            <button  aria-label="Copy " type="button" className="results-share-button" onClick={onCopyResultsLink}>
               <LinkIcon className="action-link-icon" />
               <span>{copyResultsLinkLabel}</span>
             </button>
@@ -118,7 +118,7 @@ export const ResultsSection = ({
 
           {showBackToTopLink ? (
             <div className="results-footer">
-              <button type="button" className="results-back-to-top-link" onClick={onBackToTop}>
+              <button  aria-label="Back" type="button" className="results-back-to-top-link" onClick={onBackToTop}>
                 Back to Top
               </button>
             </div>

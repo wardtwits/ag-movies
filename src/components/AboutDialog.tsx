@@ -22,7 +22,7 @@ export const AboutDialog = ({ open, onClose }: AboutDialogProps) => {
       title="About"
       onClose={onClose}
       actions={
-        <button type="button" className="dialog-action-primary" onClick={onClose}>
+        <button  aria-label="Close" type="button" className="dialog-action-primary" onClick={onClose}>
           Close
         </button>
       }

@@ -21,20 +21,20 @@ export const HeroHeader = ({ mode, onModeChange }: HeroHeaderProps) => {
         </h1>
       </div>
 
-      <div className="mode-tabs" role="radiogroup" aria-label="Search mode">
+      <div className="mode-tabs" role="tablist" aria-label="Search mode">
         {MODE_OPTIONS.map((option) => {
           const isActive = mode === option.value
           return (
-            <label key={option.value} className={`mode-tab${isActive ? ' mode-tab-active' : ''}`}>
-              <input
-                type="radio"
-                name="search-mode"
-                value={option.value}
-                checked={isActive}
-                onChange={() => onModeChange(option.value)}
-              />
-              <span>{option.label}</span>
-            </label>
+            <button
+              key={option.value}
+              id={`tab-${option.value}`}
+              role="tab"
+              className={`mode-tab${isActive ? ' mode-tab-active' : ''}`}
+              aria-selected={isActive}
+              onClick={() => onModeChange(option.value)}
+            >
+              {option.label}
+            </button>
           )
         })}
       </div>

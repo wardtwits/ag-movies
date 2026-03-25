@@ -39,7 +39,7 @@ export const HowItWorksDialog = ({ open, onClose }: HowItWorksDialogProps) => {
       title="How it Works"
       onClose={onClose}
       actions={
-        <button type="button" className="dialog-action-primary" onClick={onClose}>
+        <button  aria-label="Close" type="button" className="dialog-action-primary" onClick={onClose}>
           Got it
         </button>
       }

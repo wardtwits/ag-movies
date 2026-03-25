@@ -65,8 +65,10 @@ export const SearchAutocompleteField = ({
   onClearSelection,
 }: SearchAutocompleteFieldProps) => {
   const [isFocused, setIsFocused] = useState(false)
+  const [activeOptionIndex, setActiveOptionIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const listboxId = useId()
+  const liveRegionId = useId()
   const trimmedValue = value.trim()
   const isSelected = selectedEntity !== null
   const shouldShowDropdown =
@@ -107,32 +109,87 @@ export const SearchAutocompleteField = ({
     }, 260)
   }, [scrollToTopOnFocus])
 
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!shouldShowDropdown) {
+        return
+      }
+
+      switch (event.key) {
+        case 'ArrowDown': {
+          event.preventDefault()
+          setActiveOptionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev))
+          break
+        }
+        case 'ArrowUp': {
+          event.preventDefault()
+          setActiveOptionIndex((prev) => (prev > 0 ? prev - 1 : -1))
+          break
+        }
+        case 'Enter': {
+          event.preventDefault()
+          if (activeOptionIndex >= 0 && activeOptionIndex < suggestions.length) {
+            blurActiveInput()
+            onSelect(suggestions[activeOptionIndex])
+            setIsFocused(false)
+            setActiveOptionIndex(-1)
+          }
+          break
+        }
+        case 'Escape': {
+          event.preventDefault()
+          setIsFocused(false)
+          setActiveOptionIndex(-1)
+          break
+        }
+        default:
+          break
+      }
+    },
+    [shouldShowDropdown, suggestions, activeOptionIndex, blurActiveInput, onSelect],
+  )
+
+  const handleInputBlur = useCallback(() => {
+    window.setTimeout(() => {
+      setIsFocused(false)
+      setActiveOptionIndex(-1)
+    }, 100)
+  }, [])
+
   const dropdownContent = useMemo(() => {
     if (isLoading) {
-      return <div className="search-dropdown-state">Searching TMDB…</div>
+      return <div className="search-dropdown-state" role="status" aria-live="polite">Searching TMDB…</div>
     }
 
     if (!suggestions.length) {
-      return <div className="search-dropdown-state">No results found for &quot;{trimmedValue}&quot;</div>
+      return (
+        <div className="search-dropdown-state" role="status" aria-live="polite">
+          No results found for &quot;{trimmedValue}&quot;
+        </div>
+      )
     }
 
     return (
       <ul className="search-dropdown-list" role="listbox" id={listboxId}>
-        {suggestions.map((entity) => {
+        {suggestions.map((entity, index) => {
           const imageUrl = getImageUrl(getEntityImagePath(entity))
+          const isActive = index === activeOptionIndex
           return (
-            <li key={`${inputKind}-${entity.id}`}>
+            <li key={`${inputKind}-${entity.id}`} role="option" aria-selected={isActive}>
               <button
                 type="button"
-                className="search-dropdown-option"
+                 aria-label="Select Dropdown"
+                className={`search-dropdown-option${isActive ? ' active' : ''}`}
                 onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveOptionIndex(index)}
                 onClick={() => {
                   blurActiveInput()
                   onSelect(entity)
                   setIsFocused(false)
+                  setActiveOptionIndex(-1)
                 }}
               >
-                <span className="search-dropdown-avatar" aria-hidden="true">
+                <span className="search-dropdown-avatar" aria-hidden="true" tabIndex={-1}>
                   {imageUrl ? <img src={imageUrl} alt="" /> : <span>{getFallbackGlyph(entity)}</span>}
                 </span>
                 <span className="search-dropdown-copy">
@@ -145,7 +202,7 @@ export const SearchAutocompleteField = ({
         })}
       </ul>
     )
-  }, [blurActiveInput, inputKind, isLoading, listboxId, onSelect, suggestions, trimmedValue])
+  }, [blurActiveInput, inputKind, isLoading, listboxId, onSelect, suggestions, trimmedValue, activeOptionIndex])
 
   const handleClear = () => {
     blurActiveInput()
@@ -170,7 +227,7 @@ export const SearchAutocompleteField = ({
             }
           }}
         >
-          <span className="search-selected-avatar" aria-hidden="true">
+          <span className="search-selected-avatar" aria-hidden="true" tabIndex={-1}>
             {getImageUrl(getEntityImagePath(selectedEntity)) ? (
               <img src={getImageUrl(getEntityImagePath(selectedEntity)) ?? undefined} alt="" />
             ) : (
@@ -191,7 +248,7 @@ export const SearchAutocompleteField = ({
       ) : (
         <div className="search-input-shell">
           <span className="search-input-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
+            <svg viewBox="0 0 24 24" fill="none" tabIndex={-1}>
               <path
                 d="M21 21l-4.4-4.4m1.4-5.1a7 7 0 11-14 0 7 7 0 0114 0z"
                 stroke="currentColor"
@@ -208,11 +265,11 @@ export const SearchAutocompleteField = ({
             onChange={(event) => onChange(event.target.value)}
             onFocus={(event) => {
               setIsFocused(true)
+              setActiveOptionIndex(-1)
               scrollFieldToTop(event.currentTarget)
             }}
-            onBlur={() => {
-              window.setTimeout(() => setIsFocused(false), 100)
-            }}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
             autoComplete="new-password"
             autoCorrect="off"
@@ -227,12 +284,25 @@ export const SearchAutocompleteField = ({
             data-ms-editor="false"
             aria-label={label}
             aria-autocomplete="list"
-            aria-expanded={shouldShowDropdown}
             aria-controls={shouldShowDropdown ? listboxId : undefined}
+            aria-activedescendant={
+              shouldShowDropdown && activeOptionIndex >= 0
+                ? `${inputKind}-${suggestions[activeOptionIndex].id}`
+                : undefined
+            }
           />
           <span className="search-input-trailing">
             {trailingAction ? <span className="search-input-action-slot">{trailingAction}</span> : null}
             {isLoading ? <span className="search-input-spinner" aria-hidden="true" /> : null}
+          </span>
+          <span id={liveRegionId} role="status" aria-live="polite" className="sr-only">
+            {isLoading && shouldShowDropdown ? 'Searching for results' : null}
+            {!isLoading && suggestions.length > 0 && shouldShowDropdown
+              ? `${suggestions.length} result${suggestions.length === 1 ? '' : 's'} available`
+              : null}
+            {!isLoading && suggestions.length === 0 && hasSearched && shouldShowDropdown
+              ? 'No results found'
+              : null}
           </span>
         </div>
       )}

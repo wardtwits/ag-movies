@@ -23,7 +23,7 @@ export interface ShareSnapshot {
 
 const SHARE_HASH_PREFIX = '#share='
 const SHARE_SNAPSHOT_VERSION = 1
-const MAX_SHARE_URL_LENGTH = 32000
+const MAX_SHARE_URL_LENGTH = 2000
 
 const emptyPersonWithCredits = (person: PersonSummary): PersonWithCredits => ({
   person,
