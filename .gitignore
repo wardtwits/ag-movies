@@ -27,3 +27,4 @@ ios/
 *.njsproj
 *.sln
 *.sw?
+ag-movies.code-workspace
