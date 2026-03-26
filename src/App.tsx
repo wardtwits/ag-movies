@@ -1154,7 +1154,6 @@ function App() {
     mode === 'bacon' && !isPersonSelection(primarySelection) ? (
       <button
         type="button"
-        aria-label="Search Actor"
         className="search-inline-action-button"
         onMouseDown={(event) => event.preventDefault()}
         onClick={handleRandomBaconActor}
@@ -1224,7 +1223,6 @@ function App() {
   const clearSelectionButton = (
     <button
       type="button"
-      aria-label="Clear Fields"
       className={`clear-search-button clear-search-button-inline${
         mode !== 'bacon' && isMobileViewport ? ' clear-search-button-mobile-link' : ''
       }${shouldShowClearButton ? '' : ' clear-search-button-hidden'}`}
@@ -1238,7 +1236,7 @@ function App() {
   )
 
   return (
-    <div className="app-shell skip-link">
+    <div className="app-shell">
       <AppNav
         onAboutOpen={() => setAboutOpen(true)}
         onHowItWorksOpen={() => setHowItWorksOpen(true)}
@@ -1248,9 +1246,7 @@ function App() {
       <main className="app-main">
         <section className={`hero-stage hero-stage-${mode}`} ref={topScrollTargetRef}>
           <HeroHeader mode={mode} onModeChange={handleModeChange} />
-        </section>
 
-        <div role="tabpanel" aria-labelledby={`tab-${mode}`}>
         <section className={`search-panel search-panel-mode-${mode}`} ref={searchPanelRef}>
           {mode !== 'bacon' ? (
             <>
@@ -1284,13 +1280,14 @@ function App() {
 
             {mode !== 'bacon' && SHOW_RANDOM_MATCH ? (
               <div className="search-panel-actions">
-                <button aria-label="Random Match" type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
+                <button type="button" className="random-match-button" onClick={handleRandomMatch} disabled={isLoading}>
                   Random Match
                 </button>
               </div>
             ) : null}
 
           </section>
+        </section>
 
         {mode === 'bacon' ? (
           <div className="results-scroll-anchor" ref={resultsScrollTargetRef}>
@@ -1352,7 +1349,6 @@ function App() {
             />
           </div>
         )}
-        </div>
       </main>
 
       {!aboutOpen && !howItWorksOpen ? <TmdbFooter /> : null}

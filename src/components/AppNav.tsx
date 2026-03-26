@@ -153,7 +153,7 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
         aria-label={isDrawerOpen ? 'Close site navigation' : 'Open site navigation'}
         aria-haspopup="dialog"
       >
-        <span className="app-nav-toggle-lines" aria-hidden="true" tabIndex={-1}>
+        <span className="app-nav-toggle-lines" aria-hidden="true">
           <span />
           <span />
           <span />
@@ -187,17 +187,15 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
                   </button>
                 </div>
 
-                <nav className="app-nav-drawer-links">
+                <nav className="app-nav-drawer-links" aria-label="Site navigation">
                   <button
                     type="button"
-                     aria-label="Navigation Drawer"
                     className="app-nav-drawer-link"
                     onClick={() => openDialogAfterClosing(onDownloadOpen)}
                   >
                     Get the App
                   </button>
                   <button
-                   aria-label="About"
                     type="button"
                     className="app-nav-drawer-link"
                     onClick={() => openDialogAfterClosing(onAboutOpen)}
@@ -206,7 +204,6 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
                   </button>
                   <button
                     type="button"
-                     aria-label="How it Works"
                     className="app-nav-drawer-link"
                     onClick={() => openDialogAfterClosing(onHowItWorksOpen)}
                   >
@@ -227,10 +224,10 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
       <button type="button" className="app-nav-link" onClick={onDownloadOpen}>
         Get the App
       </button>
-      <button  aria-label="About Link" type="button" className="app-nav-link" onClick={onAboutOpen}>
+      <button type="button" className="app-nav-link" onClick={onAboutOpen}>
         About
       </button>
-      <button  aria-label="How it Works Link" type="button" className="app-nav-link" onClick={onHowItWorksOpen}>
+      <button type="button" className="app-nav-link" onClick={onHowItWorksOpen}>
         How it Works
       </button>
       <a className="app-nav-link" href="/privacy.html">
@@ -240,7 +237,7 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
   )
 
   return (
-    <nav className="app-nav" aria-label="Open Dialog">
+    <nav className="app-nav" aria-label="Site navigation">
       {navContent}
     </nav>
   )

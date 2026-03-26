@@ -86,7 +86,7 @@ export const CommonCastForm = ({
 
       {secondaryActionLabel && onSecondaryAction ? (
         <div className="compare-form-actions">
-          <button  aria-label="action label" className="secondary-button" type="button" onClick={onSecondaryAction} disabled={!canUseSecondaryAction}>
+          <button className="secondary-button" type="button" onClick={onSecondaryAction} disabled={!canUseSecondaryAction}>
             {secondaryActionLabel}
           </button>
         </div>

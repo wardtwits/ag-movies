@@ -12,7 +12,7 @@
   --bg-button-hover: rgba(42, 55, 81, 0.92);
   --gold: #dcc089;
   --gold-soft: #f3e4be;
-  --gold-muted: #fff;
+  --gold-muted: #a1885b;
   --text: #f5efe2;
   --text-muted: #b7ab93;
   --text-soft: #8f877c;
@@ -68,14 +68,6 @@ input:focus-visible,
     radial-gradient(circle at 82% 18%, rgba(118, 134, 161, 0.14), transparent 26%),
     linear-gradient(180deg, #04060b 0%, #0b1017 38%, #04060b 100%);
   color: var(--text);
-}
-
-/* Accessibility */
-a.skip-link {
-  /* styles to visually hide */
-}
-a.skip-link:focus {
-  /* styles to display */
 }
 
 .app-shell::before,
