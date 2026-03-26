@@ -24,7 +24,7 @@ export const DownloadDialog = ({ open, onClose }: DownloadDialogProps) => {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
-          <a href="#" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+          <a href="https://apps.apple.com/us/app/castlink/id6760738115" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
             <img src="/images/app-store-badge.svg" alt="Download on the App Store" style={{ height: '48px', width: 'auto', display: 'block' }} />
           </a>
           <a href="#" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
