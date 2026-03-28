@@ -13,6 +13,7 @@ const FILM_ROLL_IMAGE_URL = '/images/film-roll.png'
 interface BaconPathSectionProps {
   isLoading: boolean
   errorMessage: string | null
+  errorIllustrationSrc?: string
   result: BaconLawResult | null
   isMobileViewport: boolean
   showCopyResultsLink: boolean
@@ -68,6 +69,7 @@ const getDegreeAccentClassName = (degree: number): string => {
 export const BaconPathSection = ({
   isLoading,
   errorMessage,
+  errorIllustrationSrc,
   result,
   isMobileViewport,
   showCopyResultsLink,
@@ -90,7 +92,14 @@ export const BaconPathSection = ({
   }
 
   if (errorMessage) {
-    return <section className="bacon-section bacon-error">{errorMessage}</section>
+    return (
+      <section className={`bacon-section bacon-error${errorIllustrationSrc ? ' search-error-with-illustration' : ''}`}>
+        <p className="search-error-message">{errorMessage}</p>
+        {errorIllustrationSrc ? (
+          <img src={errorIllustrationSrc} alt="" aria-hidden="true" className="search-error-illustration" />
+        ) : null}
+      </section>
+    )
   }
 
   if (!result) {

@@ -361,11 +361,28 @@ const SECONDARY_PLACEHOLDERS: Record<Exclude<SearchMode, 'bacon'>, string> = {
   titles: 'Film or Show 2',
 }
 
+const SEARCH_FAILURE_MESSAGE = 'Search failed. Check your signal or Wi-Fi and try again'
+const DESKTOP_SEARCH_FAILURE_IMAGE_URL = '/images/fail.png'
 const SHOW_RANDOM_MATCH = false
 const MOBILE_LAYOUT_QUERY = '(max-width: 47.99rem)'
 
 const easeInOutCubic = (progress: number): number =>
   progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
+const getUserFacingSearchErrorMessage = (error: unknown, useFriendlyNetworkErrorCopy: boolean): string => {
+  if (
+    useFriendlyNetworkErrorCopy &&
+    (error instanceof TypeError ||
+      (error instanceof Error &&
+        ['Search failed', 'Failed to fetch', 'Load failed', 'NetworkError when attempting to fetch resource.'].includes(
+          error.message,
+        )))
+  ) {
+    return SEARCH_FAILURE_MESSAGE
+  }
+
+  return error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.'
+}
 
 function App() {
   const [mode, setMode] = useState<SearchMode>('actors')
@@ -591,7 +608,11 @@ function App() {
   const resultCount = getComparisonResultCount(displayedComparisonState)
   const allComparisonResultCount = getComparisonResultCount(comparisonState)
   const filteredComparisonResultCount = getComparisonResultCount(filteredComparisonState)
-  const isMobileWebViewport = isMobileViewport && !isNativeApp()
+  const isWeb = !isNativeApp()
+  const isMobileWebViewport = isMobileViewport && isWeb
+  const isDesktopWeb = !isMobileWebViewport && isWeb
+  const desktopSearchFailureIllustration =
+    isDesktopWeb && errorMessage === SEARCH_FAILURE_MESSAGE ? DESKTOP_SEARCH_FAILURE_IMAGE_URL : undefined
   const hasRenderableResultContent =
     mode === 'bacon'
       ? Boolean(baconResult)
@@ -1127,11 +1148,11 @@ function App() {
 
       lastCompletedSearchKeyRef.current = null
       clearSearchResults()
-      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong while fetching TMDB data.')
+      setErrorMessage(getUserFacingSearchErrorMessage(error, isWeb))
       setIsLoading(false)
       setRevealedResultToken((token) => token + 1)
     })
-  }, [activeSearchKey, mode, primarySelection, secondarySelection])
+  }, [activeSearchKey, isWeb, mode, primarySelection, secondarySelection])
 
   const primaryFieldConfig =
     mode === 'titles'
@@ -1294,6 +1315,7 @@ function App() {
             <BaconPathSection
               isLoading={isLoading}
               errorMessage={errorMessage}
+              errorIllustrationSrc={desktopSearchFailureIllustration}
               result={baconResult}
               isMobileViewport={isMobileWebViewport}
               showCopyResultsLink={shouldShowCopyResultsLink}
@@ -1334,6 +1356,7 @@ function App() {
                   : 'Try searching for different titles to see overlapping cast.'
               }
               errorMessage={errorMessage}
+              errorIllustrationSrc={desktopSearchFailureIllustration}
               showingHiddenExtras={showingHiddenExtras}
               showFilterToggle={shouldShowFilterToggle}
               filterChecked={isFilteringVisibleOnly}

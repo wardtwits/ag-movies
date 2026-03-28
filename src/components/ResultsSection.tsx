@@ -18,6 +18,7 @@ interface ResultsSectionProps {
   sectionClassName?: string
   emptyDescription: string
   errorMessage: string | null
+  errorIllustrationSrc?: string
   showingHiddenExtras: boolean
   showFilterToggle: boolean
   filterChecked: boolean
@@ -40,6 +41,7 @@ export const ResultsSection = ({
   sectionClassName,
   emptyDescription,
   errorMessage,
+  errorIllustrationSrc,
   showingHiddenExtras,
   showFilterToggle,
   filterChecked,
@@ -85,7 +87,14 @@ export const ResultsSection = ({
         ) : null}
       </div>
 
-      {errorMessage ? <div className="results-error">{errorMessage}</div> : null}
+      {errorMessage ? (
+        <div className={`results-error${errorIllustrationSrc ? ' search-error-with-illustration' : ''}`}>
+          <p className="search-error-message">{errorMessage}</p>
+          {errorIllustrationSrc ? (
+            <img src={errorIllustrationSrc} alt="" aria-hidden="true" className="search-error-illustration" />
+          ) : null}
+        </div>
+      ) : null}
 
       {errorMessage && !isLoading ? null : isLoading ? (
         <div className="results-grid" aria-hidden="true">
