@@ -29,3 +29,6 @@ ios/
 *.sw?
 ag-movies.code-workspace
 castlink_code_review_report.pdf
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4/cache.db
