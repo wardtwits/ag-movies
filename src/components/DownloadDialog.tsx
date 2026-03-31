@@ -27,8 +27,9 @@ export const DownloadDialog = ({ open, onClose }: DownloadDialogProps) => {
           <a href="https://apps.apple.com/us/app/castlink/id6760738115" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
             <img src="/images/app-store-badge.svg" alt="Download on the App Store" style={{ height: '48px', width: 'auto', display: 'block' }} />
           </a>
-          <h3 style={{ color: 'white' }}>Coming soon. Currently in Testing Phase.</h3>
-          <h4 style={{ color: 'white' }}>Interesting in joining Beta Testing? <a href="mailto:testing@castlink.app">Let me know</a></h4>
+          <br/><br/>
+          <p style={{ color: 'white' }}>Coming soon to android. Currently in Testing Phase.</p>
+          <p style={{ color: 'white' }}>Interesting in joining Beta Testing? <a href="mailto:testing@castlink.app">Let me know</a></p>
            
             <img src="/images/google-play-badge.svg" alt="Get it on Google Play" style={{ height: '48px', width: 'auto', display: 'block', opacity: 0.5 }} />
          
