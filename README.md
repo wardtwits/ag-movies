@@ -2,6 +2,10 @@
 
 > Discover cast connections between movies, TV shows, and actors.
 
+⚠️ **Note:** This repository is public for hosting purposes only. CastLink is not an open-source project, and reuse of the code, design, branding, or assets is not permitted without written permission.
+
+---
+
 CastLink is an entertainment web app that helps users explore the relationships between actors, movies, and TV shows. Search for shared cast members between titles, discover which films actors have appeared in together, and uncover entertainment connections with ease.
 
 **Live at:** [castlink.app](https://castlink.app)
