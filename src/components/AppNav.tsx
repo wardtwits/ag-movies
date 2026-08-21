@@ -212,6 +212,9 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
                   <a className="app-nav-drawer-link" href="/privacy.html" onClick={closeDrawer}>
                     Privacy
                   </a>
+                  <a className="app-nav-drawer-link" href="/terms.html" onClick={closeDrawer}>
+                    Terms
+                  </a>
                 </nav>
               </aside>
             </div>,
@@ -232,6 +235,9 @@ export const AppNav = ({ onAboutOpen, onHowItWorksOpen, onDownloadOpen }: AppNav
       </button>
       <a className="app-nav-link" href="/privacy.html">
         Privacy
+      </a>
+          <a className="app-nav-link" href="/terms.html">
+        Terms
       </a>
     </>
   )

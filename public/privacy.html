@@ -1,17 +1,15 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#04060b" />
-  <title>CastLink Privacy Policy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="#04060b" name="theme-color"/>
+<title>CastLink Privacy Policy</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
     :root {
       --bg-void: #04060b;
       --bg-stage: #0c1017;
@@ -196,10 +194,21 @@
       text-transform: uppercase;
     }
 
-    .privacy-copy p {
-      margin: 0;
+    .privacy-copy p,
+    .privacy-copy li {
       color: var(--text-muted);
       line-height: 1.7;
+    }
+
+    .privacy-copy p,
+    .privacy-copy ul {
+      margin: 0;
+    }
+
+    .privacy-copy ul {
+      padding-left: 1.2rem;
+      display: grid;
+      gap: 0.45rem;
     }
 
     .privacy-notice {
@@ -218,19 +227,6 @@
       margin: 0.25rem 0 0;
       color: var(--text-soft);
       font-size: 0.92rem;
-    }
-
-    .privacy-back-to-top {
-      display: inline-flex;
-      align-items: center;
-      margin-top: 0.35rem;
-      color: var(--gold-soft);
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-decoration: underline;
-      text-underline-offset: 0.16em;
-      text-transform: uppercase;
     }
 
     @media (max-width: 47.99rem) {
@@ -263,97 +259,229 @@
   </style>
 </head>
 <body>
-  <main class="privacy-shell" id="privacy-top">
-    <article class="privacy-dialog" aria-labelledby="privacy-title">
-      <header class="privacy-header">
-        <h1 id="privacy-title">Privacy Policy</h1>
-        <button type="button" class="privacy-close" aria-label="Close Privacy Policy" id="privacy-close">×</button>
-      </header>
-
-      <div class="privacy-body">
-        <div class="privacy-copy">
-          <p class="privacy-meta"><strong>Effective Date:</strong> March 17, 2026</p>
-
-          <section>
-            <p>CastLink is an independent app created and operated by a single developer.</p>
-            <p>
-              CastLink lets users search connections between actors, movies, and TV shows, including common titles between actors,
-              common actors between titles, and Kevin Bacon-style connection paths.
-            </p>
-          </section>
-
-          <section>
-            <h2>Information We Collect</h2>
-            <p>CastLink does not require users to create an account or sign in.</p>
-            <p>CastLink does not directly collect personal information such as your name, email address, phone number, or payment information.</p>
-            <p>CastLink does not use advertising, third-party trackers, or third-party analytics SDKs.</p>
-          </section>
-
-          <section>
-            <h2>Search Activity</h2>
-            <p>When you use CastLink, you may enter searches for actors, movies, or TV shows. These searches are used only to provide the app’s functionality and display results.</p>
-            <p>CastLink does not maintain user accounts and does not intentionally store your searches on its own servers.</p>
-          </section>
-
-          <section>
-            <h2>Shareable Links</h2>
-            <p>CastLink can generate a shareable link for a search result. If you choose to share that link, the recipient may be able to view the same search result or connection represented by that link.</p>
-            <p>You should only share links if you are comfortable sharing those results with others.</p>
-          </section>
-
-          <section>
-            <h2>Third-Party Data Provider</h2>
-            <p>CastLink uses TMDB (The Movie Database) API to retrieve movie, TV, and person information.</p>
-            <div class="privacy-notice">
-              <p><strong>Required TMDB Notice:</strong></p>
-              <p>This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
-            </div>
-            <p>Because CastLink requests data from TMDB over the internet, TMDB may receive standard technical request information needed to return results.</p>
-          </section>
-
-          <section>
-            <h2>Advertising and Tracking</h2>
-            <p>CastLink does not use ads.</p>
-            <p>CastLink does not use advertising identifiers for tracking.</p>
-            <p>CastLink does not use third-party tracking technologies for profiling or targeted advertising.</p>
-          </section>
-
-          <section>
-            <h2>Data Retention</h2>
-            <p>CastLink does not intentionally retain personal information because it does not provide accounts or directly collect personal user data.</p>
-            <p>If any app state or preferences are stored locally on your device, that information remains on your device unless you choose to share it.</p>
-          </section>
-
-          <section>
-            <h2>Children’s Privacy</h2>
-            <p>CastLink is not directed to children under 13, and CastLink does not knowingly collect personal information from children.</p>
-          </section>
-
-          <section>
-            <h2>Security</h2>
-            <p>CastLink uses reasonable measures to protect the app and its communications, but no method of transmission or electronic storage is completely secure.</p>
-          </section>
-
-          <section>
-            <h2>Changes to This Privacy Policy</h2>
-            <p>This Privacy Policy may be updated from time to time. If it is updated, the Effective Date above will also be updated.</p>
-          </section>
-
-          <section>
-            <h2>Contact</h2>
-            <p>If you have questions about this Privacy Policy, you can contact <a href="mailto:Support@CastLink.app">Support@CastLink.app</a>.</p>
-          </section>
-
-          <p class="privacy-footer">Last updated: March 17, 2026</p>
-          <a class="privacy-back-to-top" href="#privacy-top" id="privacy-back-to-top">Back to Top</a>
-        </div>
-      </div>
-    </article>
-  </main>
-
-  <script>
-    const privacyBody = document.querySelector('.privacy-body')
-
+<main class="privacy-shell">
+<article aria-labelledby="privacy-title" class="privacy-dialog">
+<header class="privacy-header">
+<h1 id="privacy-title">Privacy Policy</h1>
+<button aria-label="Close Privacy Policy" class="privacy-close" id="privacy-close" type="button">×</button>
+</header>
+<div class="privacy-body">
+<div class="privacy-copy">
+<p class="privacy-meta"><strong>Last Updated:</strong> August 20, 2026</p>
+<section>
+<p>
+    This Privacy Policy explains how CastLink handles information when you use the
+    <strong>CastLink website</strong>, CastLink mobile applications on <strong>iOS</strong> and
+    <strong>Android</strong>, and related CastLink services (collectively, the “Service”).
+  </p>
+</section>
+<section class="privacy-notice">
+<p>
+    CastLink is developed and operated by an independent developer. If you have privacy questions,
+    concerns about performer information, or a request relating to information displayed through CastLink,
+    contact <a href="mailto:Support@CastLink.app">Support@CastLink.app</a>.
+  </p>
+</section>
+<section>
+<h2>1. Information CastLink Collects</h2>
+<p>CastLink is designed to minimize collection of personal information.</p>
+<ul>
+<li>
+<strong>Search input:</strong> when you search for performers, movies, or TV shows,
+      your search terms are processed to return results.
+    </li>
+<li>
+<strong>Shared content:</strong> if you choose to use a share feature, the information
+      you select is shared only through the method and recipient you choose.
+    </li>
+<li>
+<strong>Technical information:</strong> standard technical information such as IP address,
+      browser or device information, request timestamps, and basic security or diagnostic information
+      may be processed automatically by CastLink's hosting, platform, or API providers as part of
+      operating and protecting the Service.
+    </li>
+<li>
+<strong>Support communications:</strong> if you contact CastLink directly, CastLink may receive
+      the information you choose to provide, such as your email address and the contents of your message.
+    </li>
+</ul>
+<p>
+    CastLink does <strong>not</strong> require user accounts, does <strong>not</strong> use advertising trackers,
+    does <strong>not</strong> include third-party analytics SDKs, and does <strong>not</strong> collect personal
+    information for behavioral advertising or profiling.
+  </p>
+</section>
+<section>
+<h2>2. How Information Is Used</h2>
+<p>CastLink uses limited information only as reasonably necessary to operate, maintain, and protect the Service, including to:</p>
+<ul>
+<li>process searches and return results,</li>
+<li>display performer, movie, and TV information,</li>
+<li>calculate connection paths and shared credits,</li>
+<li>provide sharing functionality when you choose to use it,</li>
+<li>respond to support or privacy inquiries, and</li>
+<li>maintain the reliability and security of the Service.</li>
+</ul>
+<p>CastLink does not sell personal information.</p>
+</section>
+<section>
+<h2>3. Performer Information and Entertainment Data</h2>
+<p>
+    CastLink is an entertainment discovery service, not a casting service or performer-submission platform.
+    Performers do not need to create profiles with CastLink and CastLink does not ask performers to submit
+    headshots, resumes, self-tapes, voice recordings, biometric information, financial information, or other
+    private performer materials.
+  </p>
+<p>
+    Performer names, credits, images, and related movie and television metadata displayed through CastLink
+    are obtained through the <strong>TMDB (The Movie Database) API</strong>. CastLink uses this information
+    to help users explore performers, productions, shared credits, and connections between people and titles.
+  </p>
+<p>
+    CastLink does not claim to represent, endorse, or speak on behalf of any performer, union, guild,
+    production, studio, or casting organization.
+  </p>
+<p>
+    If you are a performer or authorized representative and believe information displayed about you is
+    inaccurate or raises a privacy concern, contact
+    <a href="mailto:Support@CastLink.app">Support@CastLink.app</a>. Because the underlying entertainment
+    metadata is supplied by TMDB, some corrections may also need to be made through TMDB, but CastLink
+    will review reasonable concerns relating to information displayed through the Service.
+  </p>
+</section>
+<section>
+<h2>4. Artificial Intelligence and Performer Data</h2>
+<p>
+    CastLink does not use performer names, images, likenesses, voices, credits, or other performer information
+    displayed through the Service to train or fine-tune generative artificial intelligence models.
+    CastLink also does not sell or license performer information or performer media to third parties for
+    generative-AI training, voice cloning, digital-replica creation, or synthetic-likeness generation.
+  </p>
+<p>
+    CastLink may use ordinary software algorithms to search entertainment data, calculate connections,
+    rank results, or operate Service features. These functions are used to provide CastLink's entertainment
+    discovery features and are not intended to create digital replicas of performers.
+  </p>
+</section>
+<section>
+<h2>5. Third-Party Services and Content</h2>
+<p>
+    CastLink uses data provided through the <strong>TMDB (The Movie Database) API</strong> to return movie,
+    television, cast, and performer information. Requests may necessarily involve technical data such as
+    IP address, device or browser information, and request timing being processed by the services involved
+    in delivering the request, as with most internet-based services.
+  </p>
+<div class="privacy-notice">
+<p><strong>Required TMDB Notice:</strong></p>
+<p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+</div>
+<p>
+    Third-party providers process information according to their own terms and privacy practices.
+    CastLink encourages users to review those policies where appropriate.
+  </p>
+</section>
+<section>
+<h2>6. Analytics, Advertising, and Tracking</h2>
+<p>CastLink currently does <strong>not</strong> use:</p>
+<ul>
+<li>third-party analytics SDKs,</li>
+<li>advertising SDKs,</li>
+<li>cross-app tracking technologies, or</li>
+<li>behavioral advertising tools.</li>
+</ul>
+<p>
+    If these practices materially change, this Privacy Policy will be updated to reflect the new practices.
+  </p>
+</section>
+<section>
+<h2>7. Data Sharing</h2>
+<p>CastLink does not share personal information with data brokers or advertisers. Information may be disclosed only in limited circumstances, including:</p>
+<ul>
+<li>to hosting, infrastructure, security, or API providers needed to operate the Service,</li>
+<li>when you intentionally use CastLink's sharing functionality,</li>
+<li>when necessary to investigate abuse, security incidents, or protect the Service and its users, or</li>
+<li>when required by law, regulation, court order, or other valid legal process.</li>
+</ul>
+<p>
+    CastLink does not sell or license performer information to third parties for advertising,
+    profiling, or generative-AI training.
+  </p>
+</section>
+<section>
+<h2>8. Data Retention</h2>
+<p>
+    CastLink does not maintain user accounts, personal user profiles, or a behavioral analytics history.
+    Search input is processed to provide the requested result and is not maintained by CastLink as a
+    user search-history database.
+  </p>
+<p>
+    Limited technical information may be retained temporarily in standard hosting, security, caching,
+    diagnostic, or API logs. Retention periods for information handled by third-party service providers
+    may be governed by those providers' practices.
+  </p>
+<p>
+    Messages sent directly to CastLink, such as support or privacy inquiries, may be retained for as long
+    as reasonably necessary to respond, maintain appropriate records, resolve disputes, or comply with law.
+  </p>
+</section>
+<section>
+<h2>9. Children's Privacy</h2>
+<p>
+    CastLink is not designed to knowingly collect personal information from children.
+    If you believe a child has provided personal information directly to CastLink,
+    contact <a href="mailto:Support@CastLink.app">Support@CastLink.app</a> so the issue can be reviewed.
+  </p>
+</section>
+<section>
+<h2>10. Security</h2>
+<p>
+    CastLink uses reasonable administrative and technical measures appropriate to the nature and scale of
+    the Service to protect information. No method of transmission over the internet or method of electronic
+    storage can be guaranteed to be completely secure.
+  </p>
+</section>
+<section>
+<h2>11. Your Choices and Requests</h2>
+<ul>
+<li>You can stop using CastLink at any time.</li>
+<li>You can avoid sharing results by not using the share feature.</li>
+<li>
+      You may contact CastLink to ask questions about personal information you have directly provided,
+      such as a support message.
+    </li>
+<li>
+      Performers and authorized representatives may contact CastLink with reasonable concerns about
+      performer information displayed through the Service.
+    </li>
+</ul>
+<p>
+    Depending on where you live, applicable law may provide additional privacy rights.
+    CastLink will respond to legally valid privacy requests as required.
+  </p>
+</section>
+<section>
+<h2>12. Changes to This Policy</h2>
+<p>
+    CastLink may update this Privacy Policy from time to time. Material changes will be reflected in the
+    version posted here together with a revised “Last Updated” date.
+  </p>
+</section>
+<section>
+<h2>13. Contact</h2>
+<p>
+    For privacy questions, performer-information concerns, or requests relating to this Privacy Policy, contact:<br/>
+<a href="mailto:Support@CastLink.app">Support@CastLink.app</a>
+</p>
+</section>
+<p class="privacy-footer">
+  CastLink is an independent entertainment discovery service and is not affiliated with or endorsed by ACTRA,
+  TMDB, any performer, production, studio, union, guild, or casting organization except where expressly stated.
+</p>
+</div>
+</div>
+</article>
+</main>
+<script>
     document.getElementById('privacy-close')?.addEventListener('click', () => {
       if (window.history.length > 1) {
         window.history.back()
@@ -361,17 +489,6 @@
       }
 
       window.location.href = '/'
-    })
-
-    document.getElementById('privacy-back-to-top')?.addEventListener('click', (event) => {
-      event.preventDefault()
-
-      if (privacyBody instanceof HTMLElement) {
-        privacyBody.scrollTo({ top: 0, behavior: 'smooth' })
-        return
-      }
-
-      window.scrollTo({ top: 0, behavior: 'smooth' })
     })
   </script>
 </body>
